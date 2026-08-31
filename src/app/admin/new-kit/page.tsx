@@ -12,6 +12,28 @@ import {
   KIT_SPECS,
   TEAMS_AND_COUNTRIES,
 } from '@/app/lib/constants';
+
+// shadcn/ui Components
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+
+// Icons
 import {
   Upload,
   X,
@@ -20,14 +42,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Plus,
-  Sparkles,
-  ShieldCheck,
 } from 'lucide-react';
 
 export default function NewKitPage() {
   const router = useRouter();
 
-  // Basic Information State
+  // Basic Details State
   const [title, setTitle] = useState('');
   const [team, setTeam] = useState('');
   const [year, setYear] = useState('2024');
@@ -36,16 +56,16 @@ export default function NewKitPage() {
   const [spec, setSpec] = useState('Stadium');
   const [price, setPrice] = useState<number | ''>('');
 
-  // Cloudinary Images (Max 15)
+  // Cloudinary Images
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Sizing & Stock
+  // Size Stock Variants
   const [variants, setVariants] = useState<{ size: string; stock: number }[]>([
     { size: 'M', stock: 1 },
   ]);
 
-  // Status & Feedback
+  // Form State
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -67,7 +87,7 @@ export default function NewKitPage() {
       const file = files[i];
 
       if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage(`File "${file.name}" exceeds the 5MB size limit.`);
+        setErrorMessage(`File "${file.name}" exceeds 5MB size limit.`);
         continue;
       }
 
@@ -117,14 +137,13 @@ export default function NewKitPage() {
     setVariants((prev) => prev.filter((v) => v.size !== size));
   };
 
-  // Submit to MongoDB (/api/products)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
 
     if (images.length === 0) {
-      setErrorMessage('Please upload at least 1 photo for this kit.');
+      setErrorMessage('Please upload at least 1 image for this kit.');
       return;
     }
 
@@ -157,10 +176,10 @@ export default function NewKitPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save kit listing.');
+        throw new Error(data.error || 'Failed to create kit listing.');
       }
 
-      setSuccessMessage('Kit listing saved to vault successfully.');
+      setSuccessMessage('Kit listing saved to vault successfully!');
       setTimeout(() => {
         router.push('/');
       }, 1200);
@@ -172,333 +191,341 @@ export default function NewKitPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 font-sans selection:bg-emerald-400 selection:text-black pb-24">
-      {/* 1. Top Navigation Bar */}
-      <header className="border-b border-zinc-800/80 sticky top-0 z-40 bg-[#0a0a0c]/90 backdrop-blur-xl">
+    <div className="min-h-screen bg-zinc-100 text-zinc-900 pb-24 font-sans selection:bg-zinc-900 selection:text-white">
+      {/* Header Bar */}
+      <header className="border-b border-zinc-200 sticky top-0 z-40 bg-white/90 backdrop-blur-md">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+            className="text-zinc-600 hover:text-black hover:bg-zinc-100"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Store
-          </button>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Store
+          </Button>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-bold tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Admin Portal
-            </span>
+            <span className="font-mono text-xs font-black tracking-widest text-black">CKFS</span>
+            <Badge variant="outline" className="font-mono text-[10px] tracking-widest uppercase border-zinc-300 text-zinc-600">
+              Admin Vault
+            </Badge>
           </div>
         </div>
       </header>
 
-      {/* 2. Main Form Container */}
+      {/* Main Container */}
       <main className="max-w-4xl mx-auto px-6 pt-10 space-y-8">
-        
-        {/* Breadcrumb & Heading */}
-        <div className="border-b border-zinc-800/80 pb-6">
-          <p className="text-xs font-mono text-zinc-500 mb-1">
-            Admin / Inventory Management / New Kit Listing
+        <div>
+          <p className="text-xs text-zinc-500 font-mono mb-1">
+            Admin / Inventory / New Drop
           </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Add Kit to Vault
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950">
+            Add Kit to Inventory
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
-            Configure jersey provenance, condition rating, pricing, and size stock levels.
+          <p className="text-xs text-zinc-600 mt-1">
+            Upload verified photos, specify provenance, and set variant stock quantities.
           </p>
         </div>
 
-        {/* Feedback Alerts */}
+        {/* Alerts */}
         {errorMessage && (
-          <div className="p-4 bg-rose-950/40 border border-rose-800/60 rounded-xl text-rose-300 text-xs flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-xs flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-4 bg-emerald-950/40 border border-emerald-800/60 rounded-xl text-emerald-300 text-xs font-bold flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <div className="p-4 bg-zinc-900 text-white font-bold rounded-lg text-xs flex items-center gap-2.5 shadow-sm">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-white" />
             <span>{successMessage}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          
-          {/* Section 1: Photos */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <span>1. Product Imagery</span>
-                  <span className="text-[10px] text-zinc-500 font-mono font-normal">
-                    (Cloudinary CDN)
-                  </span>
-                </h2>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Upload up to 15 portrait photos (4:5 ratio recommended).
-                </p>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* 1. Photo Uploader Card */}
+          <Card className="bg-white border-zinc-200 text-zinc-900 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-950">
+                  1. Product Imagery
+                </CardTitle>
+                <Badge variant="secondary" className="bg-zinc-100 text-zinc-800 font-mono text-[11px]">
+                  {images.length}/15 Photos
+                </Badge>
               </div>
-              <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                {images.length}/15 photos
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-2">
-              {images.map((imgUrl, idx) => (
-                <div
-                  key={idx}
-                  className="relative aspect-[4/5] bg-[#141416] border border-zinc-800 hover:border-zinc-600 rounded-lg overflow-hidden group transition-all"
-                >
-                  <Image
-                    src={imgUrl}
-                    alt={`Upload ${idx + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(idx)}
-                    className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-rose-600 text-white p-1 rounded-full transition-colors"
-                    title="Remove Photo"
+              <CardDescription className="text-xs text-zinc-500">
+                Upload portrait kit photos (4:5 ratio recommended). Max 5MB per file.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                {images.map((imgUrl, idx) => (
+                  <div
+                    key={idx}
+                    className="relative aspect-[4/5] bg-zinc-100 border border-zinc-200 rounded-md overflow-hidden group shadow-xs"
                   >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                  {idx === 0 && (
-                    <span className="absolute bottom-1.5 left-1.5 text-[9px] uppercase font-bold tracking-wider bg-emerald-500 text-neutral-950 px-1.5 py-0.5 rounded font-mono">
-                      Cover
+                    <Image
+                      src={imgUrl}
+                      alt={`Upload ${idx + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1.5 right-1.5 bg-black/75 hover:bg-black text-white p-1 rounded-full transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    {idx === 0 && (
+                      <Badge className="absolute bottom-1.5 left-1.5 text-[9px] uppercase px-1.5 py-0 h-4 bg-black text-white">
+                        Cover
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+
+                {images.length < 15 && (
+                  <label className="relative aspect-[4/5] border-2 border-dashed border-zinc-300 hover:border-zinc-800 bg-zinc-50 hover:bg-zinc-100/80 rounded-md flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                    <Upload className="w-5 h-5 text-zinc-400 group-hover:text-zinc-900 mb-2 transition-colors" />
+                    <span className="text-xs font-semibold text-zinc-600 group-hover:text-zinc-900 transition-colors">
+                      {uploading ? 'Uploading...' : 'Add Photo'}
                     </span>
-                  )}
-                </div>
-              ))}
+                    <span className="text-[10px] text-zinc-400 mt-0.5 font-mono">Max 5MB</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      multiple
+                      disabled={uploading}
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-              {images.length < 15 && (
-                <label className="relative aspect-[4/5] border border-dashed border-zinc-800 hover:border-emerald-400/60 bg-[#141416]/50 hover:bg-[#141416] rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all group">
-                  <Upload className="w-5 h-5 text-zinc-500 group-hover:text-emerald-400 mb-2 transition-colors" />
-                  <span className="text-xs font-semibold text-zinc-400 group-hover:text-white transition-colors">
-                    {uploading ? 'Uploading...' : 'Add Photo'}
-                  </span>
-                  <span className="text-[10px] text-zinc-500 mt-0.5 font-mono">Max 5MB</span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/avif"
-                    multiple
-                    disabled={uploading}
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-          </section>
-
-          {/* Section 2: Core Details */}
-          <section className="space-y-4">
-            <div className="border-b border-zinc-800/60 pb-3">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                2. Kit Specification & Origin
-              </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Accurately tag the club, season year, kit category, and condition grade.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+          {/* 2. Kit Specification Card */}
+          <Card className="bg-white border-zinc-200 text-zinc-900 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-950">
+                2. Kit Specification & Details
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-500">
+                Provide accurate kit metadata, condition rating, and pricing.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="title" className="text-xs font-semibold text-zinc-700">
                   Kit Listing Title *
-                </label>
-                <input
-                  type="text"
+                </Label>
+                <Input
+                  id="title"
                   required
-                  placeholder="e.g. Arsenal 2003/04 Invincibles Home Shirt"
+                  placeholder="e.g. Manchester United 1998/99 Treble Home Shirt"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-[#141416] border border-zinc-800 focus:border-emerald-400 rounded-lg px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-600 outline-none transition-colors"
+                  className="bg-white border-zinc-300 focus:border-zinc-900 text-zinc-900 text-xs"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Team / Nation *
-                </label>
-                <input
-                  type="text"
-                  required
-                  list="team-options"
-                  placeholder="Select or type team..."
-                  value={team}
-                  onChange={(e) => setTeam(e.target.value)}
-                  className="w-full bg-[#141416] border border-zinc-800 focus:border-emerald-400 rounded-lg px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-600 outline-none transition-colors"
-                />
-                <datalist id="team-options">
-                  {TEAMS_AND_COUNTRIES.map((t) => (
-                    <option key={t} value={t} />
-                  ))}
-                </datalist>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Season / Year *
-                </label>
-                <select
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  className="w-full bg-[#141416] border border-zinc-800 focus:border-emerald-400 rounded-lg px-3 py-2.5 text-xs text-zinc-100 outline-none transition-colors"
-                >
-                  {SHIRT_YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Kit Type *
-                </label>
-                <select
-                  value={kitType}
-                  onChange={(e) => setKitType(e.target.value)}
-                  className="w-full bg-[#141416] border border-zinc-800 focus:border-emerald-400 rounded-lg px-3 py-2.5 text-xs text-zinc-100 outline-none transition-colors"
-                >
-                  {KIT_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t} Kit
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Specification *
-                </label>
-                <select
-                  value={spec}
-                  onChange={(e) => setSpec(e.target.value)}
-                  className="w-full bg-[#141416] border border-zinc-800 focus:border-emerald-400 rounded-lg px-3 py-2.5 text-xs text-zinc-100 outline-none transition-colors"
-                >
-                  {KIT_SPECS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Condition Rating *
-                </label>
-                <select
-                  value={condition}
-                  onChange={(e) => setCondition(Number(e.target.value))}
-                  className="w-full bg-[#141416] border border-zinc-800 focus:border-emerald-400 rounded-lg px-3 py-2.5 text-xs text-zinc-100 outline-none transition-colors font-medium"
-                >
-                  {SHIRT_CONDITIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}/10 — {c === 10 ? 'Mint' : c === 9 ? 'Excellent' : 'Good Vintage'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Retail Price (PHP ₱) *
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  placeholder="3500"
-                  value={price}
-                  onChange={(e) =>
-                    setPrice(e.target.value === '' ? '' : Number(e.target.value))
-                  }
-                  className="w-full bg-[#141416] border border-zinc-800 focus:border-emerald-400 rounded-lg px-3.5 py-2.5 text-xs font-mono font-bold text-emerald-400 placeholder-zinc-600 outline-none transition-colors"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Section 3: Sizing & Inventory */}
-          <section className="space-y-4">
-            <div className="border-b border-zinc-800/60 pb-3">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                3. Size Inventory & Quantities
-              </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Set unit stock levels for each size variant.
-              </p>
-            </div>
-
-            <div className="space-y-2.5 pt-2">
-              {variants.map((v) => (
-                <div
-                  key={v.size}
-                  className="flex items-center gap-4 bg-[#141416] border border-zinc-800/80 rounded-lg px-4 py-2.5"
-                >
-                  <span className="w-12 text-xs font-mono font-bold text-white bg-zinc-900 border border-zinc-800 text-center py-1 rounded">
-                    {v.size}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={v.stock}
-                      onChange={(e) =>
-                        handleVariantStockChange(
-                          v.size,
-                          parseInt(e.target.value) || 0
-                        )
-                      }
-                      className="w-20 bg-[#0a0a0c] border border-zinc-800 focus:border-emerald-400 rounded text-center text-xs font-mono text-emerald-400 font-bold py-1.5 outline-none"
-                    />
-                    <span className="text-xs text-zinc-400">units in stock</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeVariant(v.size)}
-                    className="ml-auto text-zinc-500 hover:text-rose-400 transition-colors p-1"
-                    title="Remove Size"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="team" className="text-xs font-semibold text-zinc-700">
+                    Team / Country *
+                  </Label>
+                  <Input
+                    id="team"
+                    required
+                    list="team-options"
+                    placeholder="Type or select club..."
+                    value={team}
+                    onChange={(e) => setTeam(e.target.value)}
+                    className="bg-white border-zinc-300 focus:border-zinc-900 text-zinc-900 text-xs"
+                  />
+                  <datalist id="team-options">
+                    {TEAMS_AND_COUNTRIES.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
                 </div>
-              ))}
-            </div>
 
-            {/* Add Size Pill Selectors */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-2">
-              <span className="text-xs text-zinc-500 mr-1 font-mono">+ Add:</span>
-              {SHIRT_SIZES.filter(
-                (sz) => !variants.some((v) => v.size === sz)
-              ).map((sz) => (
-                <button
-                  key={sz}
-                  type="button"
-                  onClick={() => addVariant(sz)}
-                  className="text-xs px-2.5 py-1 font-mono rounded bg-[#141416] hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-600 text-zinc-300 hover:text-white transition-colors flex items-center gap-1"
-                >
-                  <Plus className="w-3 h-3" /> {sz}
-                </button>
-              ))}
-            </div>
-          </section>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-zinc-700">
+                    Season / Year *
+                  </Label>
+                  <Select value={year} onValueChange={setYear}>
+                    <SelectTrigger className="bg-white border-zinc-300 text-xs text-zinc-900">
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-zinc-200 text-zinc-900 max-h-56">
+                      {SHIRT_YEARS.map((y) => (
+                        <SelectItem key={y} value={y} className="text-xs">
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-zinc-700">
+                    Kit Type *
+                  </Label>
+                  <Select value={kitType} onValueChange={setKitType}>
+                    <SelectTrigger className="bg-white border-zinc-300 text-xs text-zinc-900">
+                      <SelectValue placeholder="Select Kit Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-zinc-200 text-zinc-900">
+                      {KIT_TYPES.map((t) => (
+                        <SelectItem key={t} value={t} className="text-xs">
+                          {t} Kit
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-zinc-700">
+                    Specification *
+                  </Label>
+                  <Select value={spec} onValueChange={setSpec}>
+                    <SelectTrigger className="bg-white border-zinc-300 text-xs text-zinc-900">
+                      <SelectValue placeholder="Select Spec" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-zinc-200 text-zinc-900">
+                      {KIT_SPECS.map((s) => (
+                        <SelectItem key={s} value={s} className="text-xs">
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-zinc-700">
+                    Condition Rating *
+                  </Label>
+                  <Select
+                    value={condition.toString()}
+                    onValueChange={(val) => setCondition(Number(val))}
+                  >
+                    <SelectTrigger className="bg-white border-zinc-300 text-xs text-zinc-900">
+                      <SelectValue placeholder="Select Condition" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-zinc-200 text-zinc-900">
+                      {SHIRT_CONDITIONS.map((c) => (
+                        <SelectItem key={c} value={c.toString()} className="text-xs">
+                          {c}/10 — {c === 10 ? 'Mint' : c === 9 ? 'Excellent' : 'Good Vintage'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="price" className="text-xs font-semibold text-zinc-700">
+                    Retail Price (PHP ₱) *
+                  </Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    required
+                    placeholder="3500"
+                    value={price}
+                    onChange={(e) =>
+                      setPrice(e.target.value === '' ? '' : Number(e.target.value))
+                    }
+                    className="bg-white border-zinc-300 focus:border-zinc-900 text-zinc-950 font-mono text-xs font-bold"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 3. Sizing & Stock Card */}
+          <Card className="bg-white border-zinc-200 text-zinc-900 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-950">
+                3. Size Inventory & Quantities
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-500">
+                Manage stock counts per individual size variant.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2.5">
+                {variants.map((v) => (
+                  <div
+                    key={v.size}
+                    className="flex items-center gap-4 bg-zinc-50 border border-zinc-200 rounded-lg px-4 py-2"
+                  >
+                    <span className="w-12 text-xs font-mono font-bold text-zinc-900">
+                      {v.size}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={v.stock}
+                        onChange={(e) =>
+                          handleVariantStockChange(
+                            v.size,
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        className="w-20 bg-white border-zinc-300 text-center font-mono text-xs text-zinc-950 font-bold h-8"
+                      />
+                      <span className="text-xs text-zinc-500">units in stock</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeVariant(v.size)}
+                      className="ml-auto text-zinc-400 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Size Buttons */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                <span className="text-xs text-zinc-500 mr-1 font-mono">+ Add:</span>
+                {SHIRT_SIZES.filter(
+                  (sz) => !variants.some((v) => v.size === sz)
+                ).map((sz) => (
+                  <Button
+                    key={sz}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addVariant(sz)}
+                    className="h-7 px-2.5 text-xs font-mono bg-white border-zinc-300 text-zinc-700 hover:text-black hover:bg-zinc-100"
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> {sz}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Submit Action */}
-          <div className="pt-6 border-t border-zinc-800">
-            <button
-              type="submit"
-              disabled={submitting || uploading}
-              className="w-full bg-white hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black hover:text-black font-bold text-xs uppercase tracking-wider py-4 rounded-xl transition-all cursor-pointer shadow-lg active:scale-[0.99]"
-            >
-              {submitting ? 'Saving Kit to Inventory...' : 'Publish Kit to Vault'}
-            </button>
-          </div>
+          <Button
+            type="submit"
+            disabled={submitting || uploading}
+            className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-semibold text-xs uppercase tracking-wider py-6 cursor-pointer shadow-md active:scale-[0.99]"
+          >
+            {submitting ? 'Saving Kit to Inventory...' : 'Publish Kit to Vault'}
+          </Button>
         </form>
       </main>
     </div>
