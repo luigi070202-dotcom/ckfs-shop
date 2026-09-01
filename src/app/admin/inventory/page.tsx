@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import {
   SHIRT_YEARS,
   SHIRT_CONDITIONS,
-  SHIRT_SIZES,
   KIT_TYPES,
   KIT_SPECS,
   KIT_BRANDS,
@@ -17,9 +16,19 @@ import {
   POPULAR_TEAMS,
 } from '@/app/lib/constants';
 
+// Reusable Common Components
+import {
+  BrandBadge,
+  TeamBadge,
+  ConditionBadge,
+  KitTypeBadge,
+  SizeStockBadge,
+  ImageUploadGallery,
+  SizeStockManager,
+} from '@/components/common';
+
 // shadcn/ui Components
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
@@ -73,9 +82,6 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
-  Upload,
-  X,
-  Star,
   Search,
   FilterX,
 } from 'lucide-react';
@@ -105,7 +111,6 @@ export default function AdminInventoryPage() {
   const [editingKit, setEditingKit] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [modalError, setModalError] = useState('');
 
   // Load Inventory from MongoDB
@@ -218,112 +223,7 @@ export default function AdminInventoryPage() {
     setIsEditDialogOpen(true);
   };
 
-  // Upload new image(s) to Cloudinary inside Modal
-  const handleModalImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (!editingKit) return;
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    if (editingKit.images.length + files.length > 15) {
-      setModalError('Maximum limit of 15 photos exceeded per kit.');
-      return;
-    }
-
-    setUploadingImage(true);
-    setModalError('');
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-
-      if (file.size > 5 * 1024 * 1024) {
-        setModalError(`File "${file.name}" exceeds 5MB size limit.`);
-        continue;
-      }
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await res.json();
-
-        if (data.success && data.url) {
-          setEditingKit((prev: any) => ({
-            ...prev,
-            images: [...prev.images, data.url],
-          }));
-        } else {
-          setModalError(data.error || 'Image upload failed.');
-        }
-      } catch (err: any) {
-        setModalError(err.message || 'Error uploading image');
-      }
-    }
-
-    setUploadingImage(false);
-    e.target.value = '';
-  };
-
-  // Remove photo from Modal
-  const handleModalRemoveImage = (indexToRemove: number) => {
-    if (!editingKit) return;
-    if (editingKit.images.length <= 1) {
-      setModalError('A kit must have at least 1 photo.');
-      return;
-    }
-    setModalError('');
-    setEditingKit({
-      ...editingKit,
-      images: editingKit.images.filter(
-        (_: string, idx: number) => idx !== indexToRemove
-      ),
-    });
-  };
-
-  // Promote photo to cover thumbnail (index 0)
-  const handleModalSetThumbnail = (indexToPromote: number) => {
-    if (!editingKit || indexToPromote === 0) return;
-    const images = [...editingKit.images];
-    const [selectedImage] = images.splice(indexToPromote, 1);
-    images.unshift(selectedImage);
-    setEditingKit({ ...editingKit, images });
-  };
-
-  // Sizing Variant Handlers
-  const handleModalStockChange = (size: string, newStock: number) => {
-    if (!editingKit) return;
-    setEditingKit({
-      ...editingKit,
-      variants: editingKit.variants.map((v: any) =>
-        v.size === size ? { ...v, stock: Math.max(0, newStock) } : v
-      ),
-    });
-  };
-
-  const handleModalAddVariant = (size: string) => {
-    if (!editingKit) return;
-    if (!editingKit.variants.some((v: any) => v.size === size)) {
-      setEditingKit({
-        ...editingKit,
-        variants: [...editingKit.variants, { size, stock: 1 }],
-      });
-    }
-  };
-
-  const handleModalRemoveVariant = (size: string) => {
-    if (!editingKit) return;
-    setEditingKit({
-      ...editingKit,
-      variants: editingKit.variants.filter((v: any) => v.size !== size),
-    });
-  };
-
-  // Save Changes to MongoDB (PUT /api/products/[slug])
+  // Save Changes to MongoDB
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingKit) return;
@@ -379,7 +279,7 @@ export default function AdminInventoryPage() {
     }
   };
 
-  // Confirm Delete using shadcn Dialog (replaces window.confirm & alert)
+  // Confirm Delete using shadcn Dialog
   const handleConfirmDelete = async () => {
     if (!kitToDelete) return;
 
@@ -404,161 +304,6 @@ export default function AdminInventoryPage() {
       setIsDeleting(false);
       setKitToDelete(null);
     }
-  };
-
-  // Helper 1: Color Badges for Kit Brands
-  const renderBrandBadge = (brand: string) => {
-    const b = brand || 'Nike';
-    const brandStyles: Record<string, string> = {
-      Nike: 'bg-zinc-900 text-white border-zinc-700',
-      Adidas: 'bg-blue-100 text-blue-900 border-blue-300',
-      Puma: 'bg-red-100 text-red-800 border-red-300',
-      Umbro: 'bg-amber-100 text-amber-900 border-amber-300',
-      Kappa: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-      Hummel: 'bg-orange-100 text-orange-900 border-orange-300',
-      Macron: 'bg-cyan-100 text-cyan-900 border-cyan-300',
-      Castore: 'bg-slate-900 text-slate-100 border-slate-700',
-      Reebok: 'bg-indigo-100 text-indigo-900 border-indigo-300',
-      Lotto: 'bg-rose-100 text-rose-900 border-rose-300',
-      Diadora: 'bg-teal-100 text-teal-900 border-teal-300',
-      Asics: 'bg-sky-100 text-sky-900 border-sky-300',
-      'New Balance': 'bg-fuchsia-100 text-fuchsia-900 border-fuchsia-300',
-    };
-
-    const style = brandStyles[b] || 'bg-zinc-100 text-zinc-800 border-zinc-300';
-
-    return (
-      <span
-        className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold border shadow-xs ${style}`}
-      >
-        {b}
-      </span>
-    );
-  };
-
-  // Helper 2: Color Badges for Kit Types
-  const renderKitTypeBadge = (kitType: string, spec: string) => {
-    const typeStyles: Record<string, string> = {
-      Home: 'bg-blue-50 text-blue-700 border-blue-200',
-      Away: 'bg-amber-50 text-amber-800 border-amber-200',
-      Third: 'bg-purple-50 text-purple-700 border-purple-200',
-      Fourth: 'bg-pink-50 text-pink-700 border-pink-200',
-      Fifth: 'bg-rose-50 text-rose-700 border-rose-200',
-      GK: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-      Jacket: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-      Drill: 'bg-violet-50 text-violet-800 border-violet-200',
-      Polo: 'bg-teal-50 text-teal-800 border-teal-200',
-      'Pre-match': 'bg-orange-50 text-orange-800 border-orange-200',
-    };
-
-    const style = typeStyles[kitType] || 'bg-zinc-50 text-zinc-700 border-zinc-200';
-
-    return (
-      <div className="flex flex-col gap-1">
-        <span
-          className={`inline-flex items-center w-fit px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${style}`}
-        >
-          {kitType} Kit
-        </span>
-        <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
-          {spec}
-        </span>
-      </div>
-    );
-  };
-
-  // Helper 3: Color Badges for Club / Team Names
-  const TEAM_COLOR_PALETTE = [
-    'bg-red-50 text-red-900 border-red-200',
-    'bg-blue-50 text-blue-900 border-blue-200',
-    'bg-emerald-50 text-emerald-900 border-emerald-200',
-    'bg-amber-50 text-amber-950 border-amber-200',
-    'bg-purple-50 text-purple-900 border-purple-200',
-    'bg-sky-50 text-sky-950 border-sky-200',
-    'bg-teal-50 text-teal-900 border-teal-200',
-    'bg-indigo-50 text-indigo-900 border-indigo-200',
-    'bg-rose-50 text-rose-900 border-rose-200',
-    'bg-orange-50 text-orange-950 border-orange-200',
-  ];
-
-  const renderTeamBadge = (team: string) => {
-    let hash = 0;
-    for (let i = 0; i < team.length; i++) {
-      hash = team.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const colorIndex = Math.abs(hash) % TEAM_COLOR_PALETTE.length;
-    const colorClass = TEAM_COLOR_PALETTE[colorIndex];
-
-    return (
-      <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${colorClass}`}
-      >
-        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-        {team}
-      </span>
-    );
-  };
-
-  // Helper 4: Condition Badges
-  const renderConditionBadge = (condition: number) => {
-    if (condition === 10) {
-      return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          10/10 Mint
-        </span>
-      );
-    }
-    if (condition === 9) {
-      return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-          9/10 Excellent
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-        8/10 Good
-      </span>
-    );
-  };
-
-  // Helper 5: Size & Stock Badges
-  const renderSizeStockBadge = (size: string, stock: number) => {
-    if (stock === 0) {
-      return (
-        <span
-          key={size}
-          className="inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 line-through opacity-80"
-          title="Out of stock"
-        >
-          {size}: 0
-        </span>
-      );
-    }
-    if (stock <= 2) {
-      return (
-        <span
-          key={size}
-          className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 shadow-xs"
-          title="Low stock"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-          {size}: <strong className="text-amber-950 font-black">{stock}</strong>
-        </span>
-      );
-    }
-    return (
-      <span
-        key={size}
-        className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-50 text-zinc-800 border border-zinc-200"
-      >
-        <span className="font-bold text-zinc-900">{size}:</span>
-        <span className="font-semibold">{stock}</span>
-      </span>
-    );
   };
 
   // Options prepared for Comboboxes
@@ -901,14 +646,14 @@ export default function AdminInventoryPage() {
                           </div>
                         </TableCell>
 
-                        {/* 2. Color-Coded Club / Country */}
+                        {/* 2. Reusable Team / Club Badge */}
                         <TableCell>
-                          {renderTeamBadge(kit.team)}
+                          <TeamBadge team={kit.team} />
                         </TableCell>
 
-                        {/* 3. Color-Coded Brand */}
+                        {/* 3. Reusable Brand Badge */}
                         <TableCell>
-                          {renderBrandBadge(kit.brand)}
+                          <BrandBadge brand={kit.brand} />
                         </TableCell>
 
                         {/* 4. Season / Year */}
@@ -918,14 +663,14 @@ export default function AdminInventoryPage() {
                           </span>
                         </TableCell>
 
-                        {/* 5. Color-Coded Kit Type & Spec */}
+                        {/* 5. Reusable Kit Type & Spec Badge */}
                         <TableCell className="whitespace-nowrap">
-                          {renderKitTypeBadge(kit.kitType, kit.spec)}
+                          <KitTypeBadge kitType={kit.kitType} spec={kit.spec} />
                         </TableCell>
 
-                        {/* 6. Color-Coded Condition Rating */}
+                        {/* 6. Reusable Condition Badge */}
                         <TableCell className="whitespace-nowrap">
-                          {renderConditionBadge(kit.condition)}
+                          <ConditionBadge condition={kit.condition} />
                         </TableCell>
 
                         {/* 7. Price */}
@@ -933,12 +678,16 @@ export default function AdminInventoryPage() {
                           ₱{kit.price?.toLocaleString()}
                         </TableCell>
 
-                        {/* 8. Color-Coded Size Stock */}
+                        {/* 8. Reusable Size Stock Badges */}
                         <TableCell>
                           <div className="flex flex-wrap gap-1.5 items-center">
-                            {kit.variants?.map((v: any) =>
-                              renderSizeStockBadge(v.size, v.stock)
-                            )}
+                            {kit.variants?.map((v: any) => (
+                              <SizeStockBadge
+                                key={v.size}
+                                size={v.size}
+                                stock={v.stock}
+                              />
+                            ))}
                           </div>
                         </TableCell>
 
@@ -1022,81 +771,18 @@ export default function AdminInventoryPage() {
 
           {editingKit && (
             <form onSubmit={handleSaveEdit} className="space-y-6 pt-2">
-              {/* Image Gallery */}
-              <div className="space-y-3 border-b border-zinc-200 pb-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-950">
-                      Product Photos ({editingKit.images?.length || 0}/15)
-                    </Label>
-                    <p className="text-[11px] text-zinc-500">
-                      Hover over any image to set it as the primary cover or remove it.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 pt-1">
-                  {editingKit.images?.map((imgUrl: string, idx: number) => (
-                    <div
-                      key={idx}
-                      className="relative aspect-[4/5] bg-zinc-100 border border-zinc-200 rounded-md overflow-hidden group shadow-xs"
-                    >
-                      <Image
-                        src={imgUrl}
-                        alt={`Photo ${idx + 1}`}
-                        fill
-                        sizes="(max-width: 640px) 33vw, 25vw"
-                        className="object-cover"
-                      />
-
-                      {/* Remove Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleModalRemoveImage(idx)}
-                        className="absolute top-1 right-1 bg-black/75 hover:bg-red-600 text-white p-1 rounded-full transition-colors z-10"
-                        title="Remove Image"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-
-                      {/* Cover Badge or Button */}
-                      {idx === 0 ? (
-                        <span className="absolute bottom-1 left-1 bg-zinc-950 text-white text-[9px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                          <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" /> Cover
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleModalSetThumbnail(idx)}
-                          className="absolute bottom-1 left-1 right-1 bg-black/75 hover:bg-black text-white text-[9px] uppercase font-semibold py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity text-center"
-                        >
-                          Set Cover
-                        </button>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Add Photo Button */}
-                  {editingKit.images?.length < 15 && (
-                    <label className="relative aspect-[4/5] border-2 border-dashed border-zinc-300 hover:border-zinc-900 bg-zinc-50 hover:bg-zinc-100 rounded-md flex flex-col items-center justify-center cursor-pointer transition-colors group">
-                      <Upload className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 mb-1 transition-colors" />
-                      <span className="text-[11px] font-semibold text-zinc-600 group-hover:text-zinc-900">
-                        {uploadingImage ? 'Uploading...' : '+ Add'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/avif"
-                        multiple
-                        disabled={uploadingImage}
-                        onChange={handleModalImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-                </div>
+              {/* 1. Reusable Image Gallery Component */}
+              <div className="border-b border-zinc-200 pb-5">
+                <ImageUploadGallery
+                  images={editingKit.images || []}
+                  onChange={(updatedImages) =>
+                    setEditingKit({ ...editingKit, images: updatedImages })
+                  }
+                  onError={setModalError}
+                />
               </div>
 
-              {/* Details */}
+              {/* 2. Kit Attributes */}
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="edit-title" className="text-xs font-semibold text-zinc-700">
@@ -1259,65 +945,14 @@ export default function AdminInventoryPage() {
                 </div>
               </div>
 
-              {/* Size Variants */}
-              <div className="pt-3 border-t border-zinc-200 space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-wider text-zinc-900">
-                  Size Inventory Stock
-                </Label>
-
-                <div className="space-y-2">
-                  {editingKit.variants?.map((v: any) => (
-                    <div
-                      key={v.size}
-                      className="flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded px-3 py-1.5"
-                    >
-                      <span className="w-10 text-xs font-mono font-bold text-zinc-900">
-                        {v.size}
-                      </span>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={v.stock}
-                        onChange={(e) =>
-                          handleModalStockChange(
-                            v.size,
-                            parseInt(e.target.value) || 0
-                          )
-                        }
-                        className="w-20 bg-white border-zinc-300 text-center font-mono text-xs font-bold h-8"
-                      />
-                      <span className="text-xs text-zinc-500">units in stock</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleModalRemoveVariant(v.size)}
-                        className="ml-auto text-zinc-400 hover:text-red-600 hover:bg-red-50 h-7 px-2"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add Size Buttons */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-xs text-zinc-500 mr-1 font-mono">+ Add:</span>
-                  {SHIRT_SIZES.filter(
-                    (sz) => !editingKit.variants.some((v: any) => v.size === sz)
-                  ).map((sz) => (
-                    <Button
-                      key={sz}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleModalAddVariant(sz)}
-                      className="h-7 px-2 text-xs font-mono bg-white border-zinc-300 text-zinc-700 hover:text-black hover:bg-zinc-100"
-                    >
-                      <Plus className="w-3 h-3 mr-1" /> {sz}
-                    </Button>
-                  ))}
-                </div>
+              {/* 3. Reusable Size Inventory Manager Component */}
+              <div className="pt-3 border-t border-zinc-200">
+                <SizeStockManager
+                  variants={editingKit.variants || []}
+                  onChange={(updatedVariants) =>
+                    setEditingKit({ ...editingKit, variants: updatedVariants })
+                  }
+                />
               </div>
 
               {/* Actions */}
@@ -1332,7 +967,7 @@ export default function AdminInventoryPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={savingEdit || uploadingImage}
+                  disabled={savingEdit}
                   className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold"
                 >
                   {savingEdit ? 'Saving Changes...' : 'Save Changes'}
