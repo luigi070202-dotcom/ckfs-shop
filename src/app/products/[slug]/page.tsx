@@ -123,24 +123,6 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-950 selection:bg-zinc-950 selection:text-white pb-24">
-      {/* Top Header */}
-      <header className="border-b border-zinc-200 sticky top-0 z-40 bg-white/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/')}
-            className="text-zinc-600 hover:text-black hover:bg-zinc-100 text-xs"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Catalog
-          </Button>
-
-          <Link href="/" className="font-mono text-lg font-black tracking-tight">
-            CKFS
-          </Link>
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           

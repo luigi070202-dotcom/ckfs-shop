@@ -6,3 +6,5 @@ export * from './kit-type-badge';
 export * from './size-stock-badge';
 export * from './image-upload-gallery';
 export * from './size-stock-manager';
+export * from './header';
+export * from './footer';

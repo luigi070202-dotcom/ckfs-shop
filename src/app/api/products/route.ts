@@ -14,6 +14,11 @@ export async function GET(request: NextRequest) {
     const condition = searchParams.get('condition');
     const brand = searchParams.get('brand');
 
+    // Pagination parameters with fallback defaults
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.max(1, parseInt(searchParams.get('limit') || '12', 10));
+    const skip = (page - 1) * limit;
+
     // Build dynamic query filter
     const filter: Record<string, any> = {};
 
@@ -33,12 +38,29 @@ export async function GET(request: NextRequest) {
       filter.brand = { $regex: new RegExp(brand, 'i') };
     }
 
-    const products = await Product.find(filter).sort({ createdAt: -1 });
+    // Run query and total count in parallel
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
       success: true,
       count: products.length,
       data: products,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasMore: page < totalPages,
+      },
     });
   } catch (error: any) {
     return NextResponse.json(

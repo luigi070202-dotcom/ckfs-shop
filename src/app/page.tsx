@@ -35,7 +35,11 @@ import {
   Package,
   Sparkles,
   ShoppingBag,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 12;
 
 export default function StoreCatalogPage() {
   // 2. Connect Zustand Cart hooks
@@ -45,6 +49,9 @@ export default function StoreCatalogPage() {
   const [kits, setKits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,6 +155,55 @@ export default function StoreCatalogPage() {
     sortBy,
   ]);
 
+  // Reset to Page 1 whenever any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchTerm,
+    filterTeam,
+    filterBrand,
+    filterYear,
+    filterKitType,
+    filterCondition,
+    filterSize,
+    minPrice,
+    maxPrice,
+    sortBy,
+  ]);
+
+  // Calculate Paginated Slices
+  const totalPages = Math.ceil(filteredKits.length / ITEMS_PER_PAGE);
+
+  const paginatedKits = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredKits.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredKits, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    const catalogElement = document.getElementById('catalog-top');
+    if (catalogElement) {
+      catalogElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Helper for generating page numbers with ellipsis (1, 2, 3, 4)
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
+
   const hasActiveFilters = Boolean(
     searchTerm ||
       filterTeam !== 'ALL' ||
@@ -188,37 +244,6 @@ export default function StoreCatalogPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-950 selection:bg-zinc-950 selection:text-white">
-      {/* 1. Global Storefront Navigation */}
-      <header className="border-b border-zinc-200 sticky top-0 z-40 bg-white/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-mono text-xl font-black tracking-tighter bg-zinc-950 text-white px-2 py-0.5 rounded">
-              CKFS
-            </span>
-            <span className="font-bold text-sm tracking-tight text-zinc-900 hidden sm:inline">
-              Classic Kit Football Store
-            </span>
-          </Link>
-
-          {/* Customer Shopping Bag Trigger */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleCart}
-              className="relative p-2 rounded-lg text-zinc-700 hover:text-black hover:bg-zinc-100 transition-colors"
-              aria-label="Shopping bag"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              {itemCount > 0 && (
-                <span className="absolute top-1 right-1 bg-zinc-950 text-white text-[10px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* 2. Hero Section */}
       <section className="bg-zinc-950 text-white py-14 sm:py-20 px-4 sm:px-6 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto space-y-4">
@@ -235,7 +260,7 @@ export default function StoreCatalogPage() {
       </section>
 
       {/* 3. Catalog & Faceted Filters */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <main id="catalog-top" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
           {/* Top Filter Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -391,8 +416,18 @@ export default function StoreCatalogPage() {
         {/* Results Info */}
         <div className="flex items-center justify-between text-xs text-zinc-500 font-mono">
           <span>
-            Showing <strong className="text-zinc-950">{filteredKits.length}</strong> available shirts
+            Showing{' '}
+            <strong className="text-zinc-950">
+              {filteredKits.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}
+              –{Math.min(currentPage * ITEMS_PER_PAGE, filteredKits.length)}
+            </strong>{' '}
+            of <strong className="text-zinc-950">{filteredKits.length}</strong> available shirts
           </span>
+          {totalPages > 1 && (
+            <span>
+              Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+            </span>
+          )}
         </div>
 
         {/* 4. Products Grid */}
@@ -401,7 +436,7 @@ export default function StoreCatalogPage() {
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white border border-zinc-200 rounded-xl aspect-[4/6] animate-pulse p-4 space-y-3"
+                className="bg-white border border-zinc-200 rounded-xl aspect-4/6 animate-pulse p-4 space-y-3"
               >
                 <div className="w-full h-3/4 bg-zinc-100 rounded-lg" />
                 <div className="w-2/3 h-4 bg-zinc-100 rounded" />
@@ -429,7 +464,7 @@ export default function StoreCatalogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {filteredKits.map((kit, index) => (
+            {paginatedKits.map((kit, index) => (
               <ProductCard
                 key={kit._id}
                 product={kit}
@@ -437,6 +472,71 @@ export default function StoreCatalogPage() {
               />
             ))}
           </div>
+        )}
+
+        {/* 5. Numbered Pagination Controls (1, 2, 3, 4) */}
+        {totalPages > 1 && (
+          <nav
+            role="navigation"
+            aria-label="Pagination"
+            className="flex items-center justify-center gap-1.5 pt-8 border-t border-zinc-200"
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="h-9 px-3 text-xs font-mono"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Prev</span>
+            </Button>
+
+            <div className="flex items-center gap-1">
+              {getPageNumbers().map((p, idx) => {
+                if (p === '...') {
+                  return (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="w-9 h-9 flex items-center justify-center text-xs font-mono text-zinc-400 select-none"
+                    >
+                      ...
+                    </span>
+                  );
+                }
+
+                const pageNum = Number(p);
+                const isActive = currentPage === pageNum;
+
+                return (
+                  <Button
+                    key={pageNum}
+                    size="sm"
+                    variant={isActive ? 'default' : 'outline'}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`w-9 h-9 p-0 text-xs font-mono font-bold transition-all ${
+                      isActive
+                        ? 'bg-zinc-950 text-white hover:bg-zinc-800'
+                        : 'text-zinc-700 hover:bg-zinc-100 border-zinc-200'
+                    }`}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="h-9 px-3 text-xs font-mono"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </nav>
         )}
       </main>
     </div>
