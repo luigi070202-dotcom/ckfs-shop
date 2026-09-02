@@ -19,7 +19,7 @@ export interface IOrder extends Document {
   province: string;
   postalCode?: string;
   notes?: string;
-  paymentMethod: 'GCASH' | 'BANK_TRANSFER' | 'COD';
+  paymentMethod: 'GCASH' | 'BANK_TRANSFER' | 'COD' | 'PAYMONGO'; // <-- Added 'PAYMONGO' here
   items: IOrderItem[];
   subtotal: number;
   shippingFee: number;
@@ -53,9 +53,8 @@ const OrderSchema = new Schema<IOrder>(
     notes: { type: String, trim: true },
     paymentMethod: {
       type: String,
-      enum: ['GCASH', 'BANK_TRANSFER', 'COD'],
+      enum: ['GCASH', 'BANK_TRANSFER', 'COD', 'PAYMONGO'],
       required: true,
-      default: 'GCASH',
     },
     items: { type: [OrderItemSchema], required: true },
     subtotal: { type: Number, required: true },

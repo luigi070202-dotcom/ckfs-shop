@@ -1,33 +1,33 @@
 // src/app/checkout/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useCartStore } from '@/app/store/useCartStore';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   ArrowLeft,
   ShieldCheck,
   Truck,
   CreditCard,
-  Building2,
-  Banknote,
   CheckCircle2,
   AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 
-export default function CheckoutPage() {
-  const router = useRouter();
+function CheckoutContent() {
+  const searchParams = useSearchParams();
+  const orderSuccessId = searchParams.get('success');
+  const orderCancelledId = searchParams.get('cancelled');
+
   const { items, getCartTotal, clearCart } = useCartStore();
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [orderComplete, setOrderComplete] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -38,11 +38,10 @@ export default function CheckoutPage() {
     province: '',
     postalCode: '',
     notes: '',
-    paymentMethod: 'GCASH',
   });
 
   const subtotal = getCartTotal();
-  const shippingFee = subtotal > 0 ? 150 : 0; // Flat-rate nationwide shipping (₱150)
+  const shippingFee = subtotal > 0 ? 150 : 0;
   const total = subtotal + shippingFee;
 
   const handleChange = (
@@ -65,7 +64,7 @@ export default function CheckoutPage() {
         total,
       };
 
-      const res = await fetch('/api/orders', {
+      const res = await fetch('/api/checkout/paymongo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -73,38 +72,40 @@ export default function CheckoutPage() {
 
       const data = await res.json();
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to place order.');
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to initiate payment.');
       }
 
+      // Empty cart before leaving for PayMongo checkout
       clearCart();
-      setOrderComplete(data.orderId);
+
+      // Redirect directly to PayMongo hosted payment portal
+      window.location.href = data.checkoutUrl;
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred during checkout.');
-    } finally {
       setLoading(false);
     }
   };
 
-  if (orderComplete) {
+  // State: Customer redirected back after payment authorization
+  if (orderSuccessId) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4 max-w-md mx-auto">
         <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-zinc-950">
-          Order Confirmed!
+        <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950">
+          Payment Authorized!
         </h1>
         <p className="text-xs font-mono text-zinc-500">
-          Reference Number:{' '}
-          <span className="font-bold text-zinc-900">{orderComplete}</span>
+          Order Reference:{' '}
+          <span className="font-bold text-zinc-900">{orderSuccessId}</span>
         </p>
-        <p className="text-sm text-zinc-600 max-w-md">
-          Thank you for securing your kit with CK Football Shirts. We have logged
-          your delivery details and will process your order promptly.
+        <p className="text-xs text-zinc-600 leading-relaxed">
+          Your payment has been successfully recorded in PayMongo Test Mode. Your kit is reserved and queued for dispatch preparation.
         </p>
         <Link href="/">
-          <Button className="mt-4 bg-zinc-950 hover:bg-zinc-800 text-xs font-bold uppercase tracking-wider">
+          <Button className="mt-4 bg-zinc-950 hover:bg-zinc-800 text-xs font-bold uppercase tracking-wider h-11 px-6">
             Return to Store
           </Button>
         </Link>
@@ -112,6 +113,29 @@ export default function CheckoutPage() {
     );
   }
 
+  // State: Payment cancelled or abandoned at PayMongo
+  if (orderCancelledId) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4 max-w-md mx-auto">
+        <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+          <RotateCcw className="w-8 h-8" />
+        </div>
+        <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950">
+          Checkout Incomplete
+        </h1>
+        <p className="text-xs text-zinc-600">
+          The payment session was cancelled. You can review your items and try checking out again.
+        </p>
+        <Link href="/checkout">
+          <Button className="mt-4 bg-zinc-950 hover:bg-zinc-800 text-xs font-bold uppercase tracking-wider h-11 px-6">
+            Try Checkout Again
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // State: Cart is empty
   if (items.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
@@ -152,7 +176,7 @@ export default function CheckoutPage() {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Shipping & Payment Fields */}
+          {/* Shipping & Payment Info */}
           <div className="lg:col-span-7 space-y-6">
             {/* Customer Contact */}
             <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-2xs space-y-4">
@@ -197,7 +221,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Delivery Details */}
+            {/* Delivery Address */}
             <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-2xs space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-950 flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <Truck className="w-4 h-4 text-zinc-700" /> 2. Delivery Address
@@ -249,64 +273,28 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Payment Selector */}
+            {/* Payment Method Notice */}
             <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-2xs space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-950 flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <CreditCard className="w-4 h-4 text-zinc-700" /> 3. Payment Method
               </h2>
-              <RadioGroup
-                value={formData.paymentMethod}
-                onValueChange={(val) =>
-                  setFormData((prev) => ({ ...prev, paymentMethod: val }))
-                }
-                className="space-y-2"
-              >
-                <label className="flex items-center justify-between p-3 border border-zinc-200 rounded-lg cursor-pointer hover:border-zinc-400 transition-colors">
-                  <div className="flex items-center gap-2.5">
-                    <RadioGroupItem value="GCASH" id="gcash" />
-                    <span className="text-xs font-bold text-zinc-900">
-                      GCash E-Wallet
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-500">
-                    QR / Manual
+              <div className="p-4 rounded-lg border border-zinc-200 bg-zinc-50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-900">
+                    PayMongo Automated Checkout
                   </span>
-                </label>
-
-                <label className="flex items-center justify-between p-3 border border-zinc-200 rounded-lg cursor-pointer hover:border-zinc-400 transition-colors">
-                  <div className="flex items-center gap-2.5">
-                    <RadioGroupItem value="BANK_TRANSFER" id="bank" />
-                    <div className="flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-zinc-600" />
-                      <span className="text-xs font-bold text-zinc-900">
-                        Bank Transfer (BDO / BPI)
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-500">
-                    InstaPay
+                  <span className="text-[10px] font-mono bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold uppercase">
+                    Test Mode
                   </span>
-                </label>
-
-                <label className="flex items-center justify-between p-3 border border-zinc-200 rounded-lg cursor-pointer hover:border-zinc-400 transition-colors">
-                  <div className="flex items-center gap-2.5">
-                    <RadioGroupItem value="COD" id="cod" />
-                    <div className="flex items-center gap-1.5">
-                      <Banknote className="w-3.5 h-3.5 text-zinc-600" />
-                      <span className="text-xs font-bold text-zinc-900">
-                        Cash on Delivery
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-500">
-                    Upon Arrival
-                  </span>
-                </label>
-              </RadioGroup>
+                </div>
+                <p className="text-xs text-zinc-600">
+                  You will be securely redirected to PayMongo to complete payment via <strong>GCash</strong>, <strong>Maya</strong>, <strong>Credit/Debit Card</strong>, or <strong>Online Banking</strong>.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Order Summary & Placement */}
+          {/* Order Summary */}
           <div className="lg:col-span-5 space-y-4">
             <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-2xs space-y-4 sticky top-24">
               <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-950 border-b border-zinc-100 pb-3">
@@ -365,18 +353,32 @@ export default function CheckoutPage() {
                 className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs uppercase tracking-wider"
               >
                 {loading
-                  ? 'Processing Order...'
-                  : `Place Order • ₱${total.toLocaleString()}`}
+                  ? 'Connecting to PayMongo...'
+                  : `Proceed to Payment • ₱${total.toLocaleString()}`}
               </Button>
 
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-500 pt-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-zinc-700" />
-                <span>Verified original shirts • Secure checkout</span>
+                <span>Verified original shirts • Secure test checkout</span>
               </div>
             </div>
           </div>
         </div>
       </form>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex items-center justify-center font-mono text-xs text-zinc-500">
+          Loading checkout...
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }

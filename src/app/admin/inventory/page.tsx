@@ -78,7 +78,6 @@ import {
   Plus,
   Trash2,
   Edit2,
-  ArrowLeft,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
@@ -322,417 +321,406 @@ export default function AdminInventoryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-100 text-zinc-900 font-sans pb-24 selection:bg-zinc-900 selection:text-white">
-      {/* Top Header */}
-      <header className="border-b border-zinc-200 sticky top-0 z-40 bg-white/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/')}
-            className="text-zinc-600 hover:text-black hover:bg-zinc-100"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Store
-          </Button>
-
+    <div className="space-y-6 pb-16">
+      {/* Title Bar with Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 pb-5">
+        <div>
+          <p className="text-xs text-zinc-500 font-mono mb-1">
+            Admin / Catalog & Sizing Management
+          </p>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadInventory}
-              disabled={loading}
-              className="text-xs border-zinc-300 hover:bg-zinc-100"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`}
-              />
-              Refresh
-            </Button>
-            <Link href="/admin/new-kit">
-              <Button
-                size="sm"
-                className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1.5" /> Add New Kit
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-6 pt-8 space-y-6">
-        {/* Title Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-zinc-200 pb-5">
-          <div>
-            <p className="text-xs text-zinc-500 font-mono mb-1">
-              Admin / Catalog & Sizing Management
-            </p>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-950 uppercase">
               Inventory Vault
             </h1>
+            <span className="text-xs text-zinc-500 font-mono bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
+              {filteredKits.length} of {kits.length} kits
+            </span>
           </div>
-          <span className="text-xs text-zinc-500 font-mono">
-            Showing <strong className="text-zinc-950">{filteredKits.length}</strong> of{' '}
-            <strong className="text-zinc-950">{kits.length}</strong> kits
-          </span>
         </div>
 
-        {/* Alerts */}
-        {errorMessage && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-xs flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-            <span>{errorMessage}</span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadInventory}
+            disabled={loading}
+            className="text-xs border-zinc-300 hover:bg-zinc-100 h-9"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`}
+            />
+            Refresh
+          </Button>
+          <Link href="/admin/new-kit">
+            <Button
+              size="sm"
+              className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold h-9 px-4"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" /> Add New Kit
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Alerts */}
+      {errorMessage && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-xs flex items-center gap-2.5">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="p-4 bg-zinc-900 text-white font-bold rounded-lg text-xs flex items-center gap-2.5 shadow-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
+      {/* Search & Multi-Filter Toolbar */}
+      <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs space-y-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-center">
+          {/* 1. Search Bar */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Input
+              placeholder="Search keyword..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 text-xs bg-zinc-50 border-zinc-200 text-zinc-900 h-9"
+            />
           </div>
-        )}
 
-        {successMessage && (
-          <div className="p-4 bg-zinc-900 text-white font-bold rounded-lg text-xs flex items-center gap-2.5 shadow-sm">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-white" />
-            <span>{successMessage}</span>
-          </div>
-        )}
+          {/* 2. Team Combobox */}
+          <Combobox
+            options={teamComboboxOptions}
+            featuredOptions={POPULAR_TEAMS}
+            value={filterTeam}
+            onChange={setFilterTeam}
+            placeholder="Team: All"
+            searchPlaceholder="Search club or nation..."
+          />
 
-        {/* Search & Multi-Filter Toolbar */}
-        <div className="bg-white border border-zinc-200 rounded-lg p-4 shadow-xs space-y-3.5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-center">
-            {/* 1. Search Bar */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <Input
-                placeholder="Search keyword..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 text-xs bg-zinc-50 border-zinc-200 text-zinc-900 h-9"
-              />
-            </div>
+          {/* 3. Brand Combobox */}
+          <Combobox
+            options={brandComboboxOptions}
+            featuredOptions={POPULAR_BRANDS}
+            value={filterBrand}
+            onChange={setFilterBrand}
+            placeholder="Brand: All"
+            searchPlaceholder="Search brand..."
+          />
 
-            {/* 2. Searchable Team / Club Combobox */}
-            <Combobox
-              options={teamComboboxOptions}
-              featuredOptions={POPULAR_TEAMS}
-              value={filterTeam}
-              onChange={setFilterTeam}
-              placeholder="Team: All"
-              searchPlaceholder="Search club or nation..."
+          {/* 4. Season Filter */}
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="text-xs bg-zinc-50 border-zinc-200 h-9">
+              <SelectValue placeholder="Season: All" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="ALL" className="text-xs">
+                All Seasons
+              </SelectItem>
+              {SHIRT_YEARS.map((y) => (
+                <SelectItem key={y} value={y} className="text-xs">
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* 5. Kit Type Filter */}
+          <Select value={filterKitType} onValueChange={setFilterKitType}>
+            <SelectTrigger className="text-xs bg-zinc-50 border-zinc-200 h-9">
+              <SelectValue placeholder="Type: All" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="ALL" className="text-xs">
+                All Kit Types
+              </SelectItem>
+              {KIT_TYPES.map((t) => (
+                <SelectItem key={t} value={t} className="text-xs">
+                  {t} Kit
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* 6. Condition Filter */}
+          <Select value={filterCondition} onValueChange={setFilterCondition}>
+            <SelectTrigger className="text-xs bg-zinc-50 border-zinc-200 h-9">
+              <SelectValue placeholder="Condition: All" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="ALL" className="text-xs">
+                All Conditions
+              </SelectItem>
+              {SHIRT_CONDITIONS.map((c) => (
+                <SelectItem key={c} value={c.toString()} className="text-xs">
+                  {c}/10 Condition
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Price Range Inputs */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-100">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600 font-mono">
+              Price (PHP ₱):
+            </span>
+            <Input
+              type="number"
+              min="0"
+              placeholder="Min ₱"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="w-24 h-8 text-xs font-mono bg-zinc-50 border-zinc-200 text-zinc-900"
+            />
+            <span className="text-xs text-zinc-400">–</span>
+            <Input
+              type="number"
+              min="0"
+              placeholder="Max ₱"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-24 h-8 text-xs font-mono bg-zinc-50 border-zinc-200 text-zinc-900"
             />
 
-            {/* 3. Searchable Brand Combobox */}
-            <Combobox
-              options={brandComboboxOptions}
-              featuredOptions={POPULAR_BRANDS}
-              value={filterBrand}
-              onChange={setFilterBrand}
-              placeholder="Brand: All"
-              searchPlaceholder="Search brand..."
-            />
-
-            {/* 4. Season Year Filter */}
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="text-xs bg-zinc-50 border-zinc-200 h-9">
-                <SelectValue placeholder="Season: All" />
-              </SelectTrigger>
-              <SelectContent className="max-h-56">
-                <SelectItem value="ALL" className="text-xs">
-                  All Seasons
-                </SelectItem>
-                {SHIRT_YEARS.map((y) => (
-                  <SelectItem key={y} value={y} className="text-xs">
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* 5. Kit Type Filter */}
-            <Select value={filterKitType} onValueChange={setFilterKitType}>
-              <SelectTrigger className="text-xs bg-zinc-50 border-zinc-200 h-9">
-                <SelectValue placeholder="Type: All" />
-              </SelectTrigger>
-              <SelectContent className="max-h-56">
-                <SelectItem value="ALL" className="text-xs">
-                  All Kit Types
-                </SelectItem>
-                {KIT_TYPES.map((t) => (
-                  <SelectItem key={t} value={t} className="text-xs">
-                    {t} Kit
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* 6. Condition Filter */}
-            <Select value={filterCondition} onValueChange={setFilterCondition}>
-              <SelectTrigger className="text-xs bg-zinc-50 border-zinc-200 h-9">
-                <SelectValue placeholder="Condition: All" />
-              </SelectTrigger>
-              <SelectContent className="max-h-56">
-                <SelectItem value="ALL" className="text-xs">
-                  All Conditions
-                </SelectItem>
-                {SHIRT_CONDITIONS.map((c) => (
-                  <SelectItem key={c} value={c.toString()} className="text-xs">
-                    {c}/10 Condition
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Price Range Inputs + Quick Filter Presets */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-100">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-600 font-mono">
-                Price (PHP ₱):
-              </span>
-              <Input
-                type="number"
-                min="0"
-                placeholder="Min ₱"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="w-24 h-8 text-xs font-mono bg-zinc-50 border-zinc-200 text-zinc-900"
-              />
-              <span className="text-xs text-zinc-400">–</span>
-              <Input
-                type="number"
-                min="0"
-                placeholder="Max ₱"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="w-24 h-8 text-xs font-mono bg-zinc-50 border-zinc-200 text-zinc-900"
-              />
-
-              {/* Quick Preset Buttons */}
-              <div className="hidden sm:flex items-center gap-1.5 ml-2">
-                <button
-                  type="button"
-                  onClick={() => handleSetPriceRange('', '2000')}
-                  className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
-                    minPrice === '' && maxPrice === '2000'
-                      ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
-                      : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                  }`}
-                >
-                  &lt; ₱2k
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetPriceRange('2000', '3500')}
-                  className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
-                    minPrice === '2000' && maxPrice === '3500'
-                      ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
-                      : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                  }`}
-                >
-                  ₱2k–₱3.5k
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetPriceRange('3500', '5000')}
-                  className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
-                    minPrice === '3500' && maxPrice === '5000'
-                      ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
-                      : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                  }`}
-                >
-                  ₱3.5k–₱5k
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetPriceRange('5000', '')}
-                  className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
-                    minPrice === '5000' && maxPrice === ''
-                      ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
-                      : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                  }`}
-                >
-                  ₱5k+
-                </button>
-              </div>
-            </div>
-
-            {/* Reset Filters */}
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleResetFilters}
-                className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+            <div className="hidden sm:flex items-center gap-1.5 ml-2">
+              <button
+                type="button"
+                onClick={() => handleSetPriceRange('', '2000')}
+                className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
+                  minPrice === '' && maxPrice === '2000'
+                    ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
+                    : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                }`}
               >
-                <FilterX className="w-3.5 h-3.5 mr-1" /> Clear All Filters
-              </Button>
-            )}
+                &lt; ₱2k
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetPriceRange('2000', '3500')}
+                className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
+                  minPrice === '2000' && maxPrice === '3500'
+                    ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
+                    : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                }`}
+              >
+                ₱2k–₱3.5k
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetPriceRange('3500', '5000')}
+                className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
+                  minPrice === '3500' && maxPrice === '5000'
+                    ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
+                    : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                }`}
+              >
+                ₱3.5k–₱5k
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetPriceRange('5000', '')}
+                className={`text-[11px] font-mono px-2 py-1 rounded border transition-colors ${
+                  minPrice === '5000' && maxPrice === ''
+                    ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
+                    : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                }`}
+              >
+                ₱5k+
+              </button>
+            </div>
           </div>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+            >
+              <FilterX className="w-3.5 h-3.5 mr-1" /> Clear All Filters
+            </Button>
+          )}
         </div>
+      </div>
 
-        {/* Inventory Table Card */}
-        <Card className="bg-white border-zinc-200 shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-zinc-100 bg-zinc-50/50 pb-4">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-950">
-              Listed Football Shirts
-            </CardTitle>
-            <CardDescription className="text-xs text-zinc-500">
-              Filtered inventory view with separated columns for Product, Club/Nation, Brand, Season, Spec, Condition, and Size Stock.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="text-center py-20 text-xs font-mono text-zinc-500">
-                Fetching catalog records from MongoDB...
-              </div>
-            ) : filteredKits.length === 0 ? (
-              <div className="text-center py-20 text-xs text-zinc-500 space-y-2">
-                <p>No football shirts match your search/filter criteria.</p>
-                {hasActiveFilters && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResetFilters}
-                    className="text-xs"
-                  >
-                    Reset Filters
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-zinc-50/70 hover:bg-zinc-50/70 text-[11px] uppercase font-mono text-zinc-600">
-                      <TableHead className="w-[220px]">Product Name</TableHead>
-                      <TableHead className="w-[140px]">Club / Nation</TableHead>
-                      <TableHead className="w-[100px]">Brand</TableHead>
-                      <TableHead className="w-[90px]">Season</TableHead>
-                      <TableHead className="w-[130px]">Kit Type & Spec</TableHead>
-                      <TableHead className="w-[120px]">Condition</TableHead>
-                      <TableHead className="w-[100px]">Price (PHP)</TableHead>
-                      <TableHead className="min-w-[190px]">Size & Stock Status</TableHead>
-                      <TableHead className="text-right w-[90px]">Actions</TableHead>
+      {/* Inventory Table Card */}
+      <Card className="bg-white border-zinc-200 shadow-xs overflow-hidden">
+        <CardHeader className="border-b border-zinc-100 bg-zinc-50/50 pb-4">
+          <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-950">
+            Listed Football Shirts
+          </CardTitle>
+          <CardDescription className="text-xs text-zinc-500">
+            Catalog inventory breakdown by club, specifications, condition grade, and real-time variant stock.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="text-center py-20 text-xs font-mono text-zinc-500">
+              Fetching catalog records from MongoDB...
+            </div>
+          ) : filteredKits.length === 0 ? (
+            <div className="text-center py-20 text-xs text-zinc-500 space-y-2">
+              <p>No football shirts match your search/filter criteria.</p>
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  className="text-xs"
+                >
+                  Reset Filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-zinc-50/70 hover:bg-zinc-50/70 text-[11px] uppercase font-mono text-zinc-600">
+                    <TableHead className="w-[220px]">Product Name</TableHead>
+                    <TableHead className="w-[140px]">Club / Nation</TableHead>
+                    <TableHead className="w-[100px]">Brand</TableHead>
+                    <TableHead className="w-[90px]">Season</TableHead>
+                    <TableHead className="w-[130px]">Kit Type & Spec</TableHead>
+                    <TableHead className="w-[120px]">Condition</TableHead>
+                    <TableHead className="w-[100px]">Price (PHP)</TableHead>
+                    <TableHead className="min-w-[190px]">Size & Stock Status</TableHead>
+                    <TableHead className="text-right w-[90px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredKits.map((kit) => (
+                    <TableRow
+                      key={kit._id}
+                      className="hover:bg-zinc-50/80 transition-colors text-xs"
+                    >
+                      {/* Product */}
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-12 h-14 rounded bg-zinc-100 border border-zinc-200 overflow-hidden shrink-0">
+                            <Image
+                              src={
+                                kit.images?.[0] ||
+                                'https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800'
+                              }
+                              alt={kit.title}
+                              fill
+                              sizes="48px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p
+                              className="font-bold text-zinc-950 truncate max-w-[150px]"
+                              title={kit.title}
+                            >
+                              {kit.title}
+                            </p>
+                            <p className="text-[10px] font-mono text-zinc-400">
+                              {kit.slug}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Team */}
+                      <TableCell>
+                        <TeamBadge team={kit.team} />
+                      </TableCell>
+
+                      {/* Brand */}
+                      <TableCell>
+                        <BrandBadge brand={kit.brand} />
+                      </TableCell>
+
+                      {/* Season */}
+                      <TableCell>
+                        <span className="inline-block px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-mono text-xs font-bold text-zinc-900">
+                          {kit.year}
+                        </span>
+                      </TableCell>
+
+                      {/* Type & Spec */}
+                      <TableCell className="whitespace-nowrap">
+                        <KitTypeBadge kitType={kit.kitType} spec={kit.spec} />
+                      </TableCell>
+
+                      {/* Condition */}
+                      <TableCell className="whitespace-nowrap">
+                        <ConditionBadge condition={kit.condition} />
+                      </TableCell>
+
+                      {/* Price */}
+                      <TableCell className="font-mono font-bold text-zinc-950 whitespace-nowrap">
+                        ₱{kit.price?.toLocaleString()}
+                      </TableCell>
+
+                      {/* Size Variants */}
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          {kit.variants?.map((v: any) => (
+                            <SizeStockBadge
+                              key={v.size}
+                              size={v.size}
+                              stock={v.stock}
+                            />
+                          ))}
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEdit(kit)}
+                            className="h-8 text-xs border-zinc-300 hover:bg-zinc-100 text-zinc-800"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isDeleting && kitToDelete?.slug === kit.slug}
+                            onClick={() =>
+                              setKitToDelete({ slug: kit.slug, title: kit.title })
+                            }
+                            className="text-zinc-400 hover:text-red-600 hover:bg-red-50 p-2 h-8"
+                            title="Delete Kit"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredKits.map((kit) => (
-                      <TableRow
-                        key={kit._id}
-                        className="hover:bg-zinc-50/80 transition-colors text-xs"
-                      >
-                        {/* 1. Image & Product Name */}
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-12 h-14 rounded bg-zinc-100 border border-zinc-200 overflow-hidden shrink-0">
-                              <Image
-                                src={
-                                  kit.images?.[0] ||
-                                  'https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800'
-                                }
-                                alt={kit.title}
-                                fill
-                                sizes="48px"
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="min-w-0">
-                              <p
-                                className="font-bold text-zinc-950 truncate max-w-[150px]"
-                                title={kit.title}
-                              >
-                                {kit.title}
-                              </p>
-                              <p className="text-[10px] font-mono text-zinc-400">
-                                {kit.slug}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-
-                        {/* 2. Reusable Team / Club Badge */}
-                        <TableCell>
-                          <TeamBadge team={kit.team} />
-                        </TableCell>
-
-                        {/* 3. Reusable Brand Badge */}
-                        <TableCell>
-                          <BrandBadge brand={kit.brand} />
-                        </TableCell>
-
-                        {/* 4. Season / Year */}
-                        <TableCell>
-                          <span className="inline-block px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-mono text-xs font-bold text-zinc-900">
-                            {kit.year}
-                          </span>
-                        </TableCell>
-
-                        {/* 5. Reusable Kit Type & Spec Badge */}
-                        <TableCell className="whitespace-nowrap">
-                          <KitTypeBadge kitType={kit.kitType} spec={kit.spec} />
-                        </TableCell>
-
-                        {/* 6. Reusable Condition Badge */}
-                        <TableCell className="whitespace-nowrap">
-                          <ConditionBadge condition={kit.condition} />
-                        </TableCell>
-
-                        {/* 7. Price */}
-                        <TableCell className="font-mono font-bold text-zinc-950 whitespace-nowrap">
-                          ₱{kit.price?.toLocaleString()}
-                        </TableCell>
-
-                        {/* 8. Reusable Size Stock Badges */}
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1.5 items-center">
-                            {kit.variants?.map((v: any) => (
-                              <SizeStockBadge
-                                key={v.size}
-                                size={v.size}
-                                stock={v.stock}
-                              />
-                            ))}
-                          </div>
-                        </TableCell>
-
-                        {/* 9. Actions */}
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenEdit(kit)}
-                              className="h-8 text-xs border-zinc-300 hover:bg-zinc-100 text-zinc-800"
-                            >
-                              <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={isDeleting && kitToDelete?.slug === kit.slug}
-                              onClick={() => setKitToDelete({ slug: kit.slug, title: kit.title })}
-                              className="text-zinc-400 hover:text-red-600 hover:bg-red-50 p-2 h-8"
-                              title="Delete Kit"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Delete Confirmation Alert Dialog */}
-      <AlertDialog open={Boolean(kitToDelete)} onOpenChange={(open) => !open && setKitToDelete(null)}>
+      <AlertDialog
+        open={Boolean(kitToDelete)}
+        onOpenChange={(open) => !open && setKitToDelete(null)}
+      >
         <AlertDialogContent className="bg-white border-zinc-200 text-zinc-950">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-bold">
               Delete football shirt?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-zinc-600">
-              Are you sure you want to remove <strong className="text-zinc-900">&quot;{kitToDelete?.title}&quot;</strong>? This will permanently delete the item and remove its hosted media assets.
+              Are you sure you want to remove{' '}
+              <strong className="text-zinc-900">&quot;{kitToDelete?.title}&quot;</strong>? This
+              will permanently delete the item and remove its hosted media assets.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -764,14 +752,14 @@ export default function AdminInventoryPage() {
 
           {modalError && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs rounded-md flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               <span>{modalError}</span>
             </div>
           )}
 
           {editingKit && (
             <form onSubmit={handleSaveEdit} className="space-y-6 pt-2">
-              {/* 1. Reusable Image Gallery Component */}
+              {/* Image Upload Gallery */}
               <div className="border-b border-zinc-200 pb-5">
                 <ImageUploadGallery
                   images={editingKit.images || []}
@@ -782,7 +770,7 @@ export default function AdminInventoryPage() {
                 />
               </div>
 
-              {/* 2. Kit Attributes */}
+              {/* Kit Attributes */}
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="edit-title" className="text-xs font-semibold text-zinc-700">
@@ -800,7 +788,7 @@ export default function AdminInventoryPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {/* Searchable Team with Top Picks */}
+                  {/* Team Combobox */}
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-zinc-700">Team / Country</Label>
                     <Combobox
@@ -813,7 +801,7 @@ export default function AdminInventoryPage() {
                     />
                   </div>
 
-                  {/* Searchable Brand with Top Picks */}
+                  {/* Brand Combobox */}
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-zinc-700">Brand</Label>
                     <Combobox
@@ -945,7 +933,7 @@ export default function AdminInventoryPage() {
                 </div>
               </div>
 
-              {/* 3. Reusable Size Inventory Manager Component */}
+              {/* Size Inventory Manager */}
               <div className="pt-3 border-t border-zinc-200">
                 <SizeStockManager
                   variants={editingKit.variants || []}
