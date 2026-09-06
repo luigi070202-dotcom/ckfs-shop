@@ -47,27 +47,19 @@ function TrackOrderContent() {
     setCurrentPage(1);
 
     try {
-      const res = await fetch('/api/orders');
+      const res = await fetch('/api/orders/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchTarget.trim() }),
+      });
+
       const json = await res.json();
 
-      if (!json.success) {
-        throw new Error(json.error || 'Unable to retrieve tracking details.');
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'No orders found matching that Reference ID or Email address.');
       }
 
-      const cleanQuery = searchTarget.trim().toLowerCase();
-
-      const matches = json.data.filter(
-        (o: any) =>
-          o._id.toLowerCase() === cleanQuery ||
-          o._id.slice(-6).toLowerCase() === cleanQuery ||
-          o.email?.toLowerCase() === cleanQuery
-      );
-
-      if (matches.length > 0) {
-        setMatchedOrders(matches);
-      } else {
-        setErrorMsg('No orders found matching that Reference ID or Email address.');
-      }
+      setMatchedOrders(json.data);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error looking up tracking details.');
     } finally {
