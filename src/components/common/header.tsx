@@ -6,14 +6,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCartStore } from '@/app/store/useCartStore';
-import { ShoppingBag, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Defined navigation links array
+// Added Track Order to main navigation
 const NAV_LINKS = [
   { label: 'Catalog', href: '/' },
   { label: 'Vintage Kits', href: '/?condition=10' },
   { label: 'Popular Clubs', href: '/#catalog' },
+  { label: 'Track Order', href: '/track-order', icon: Truck },
 ];
 
 export function Header() {
@@ -43,39 +44,56 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-        <div className="relative w-9 h-9 sm:w-10 sm:h-10 overflow-hidden rounded">
+          <div className="relative w-9 h-9 sm:w-10 sm:h-10 overflow-hidden rounded">
             <Image
-            src="/ckfs-logo.jpg"
-            alt="CK Football Shirts Logo"
-            fill
-            priority
-            sizes="40px"
-            className="object-contain"
+              src="/ckfs-logo.jpg"
+              alt="CK Football Shirts Logo"
+              fill
+              priority
+              sizes="40px"
+              className="object-contain"
             />
-        </div>
-        <span className="font-bold text-sm tracking-tight text-zinc-900 hidden sm:inline">
+          </div>
+          <span className="font-bold text-sm tracking-tight text-zinc-900 hidden sm:inline">
             CK Football Shirts
-        </span>
+          </span>
         </Link>
 
         {/* Center Nav Links */}
         <nav className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className={cn(
-                'text-xs font-semibold uppercase tracking-wider text-zinc-600 hover:text-zinc-950 transition-colors',
-                pathname === link.href && 'text-zinc-950 font-bold'
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href;
+
+            return (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={cn(
+                  'flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-600 hover:text-zinc-950 transition-colors',
+                  isActive && 'text-zinc-950 font-bold'
+                )}
+              >
+                {Icon && <Icon className="w-3.5 h-3.5" />}
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Right Actions: Shopping Bag */}
-        <div className="flex items-center gap-3">
+        {/* Right Actions: Track Link (Mobile shortcut) + Shopping Bag */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/track-order"
+            className={cn(
+              'md:hidden p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-lg transition-colors',
+              pathname === '/track-order' && 'text-zinc-950 font-bold bg-zinc-100'
+            )}
+            aria-label="Track Order"
+          >
+            <Truck className="w-5 h-5" />
+          </Link>
+
           <button
             type="button"
             onClick={toggleCart}

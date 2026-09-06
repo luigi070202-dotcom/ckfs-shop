@@ -56,38 +56,66 @@ export function Footer() {
                 Secure Dispatch
               </h4>
               <p className="text-[11px] text-zinc-500">
-                Tracked deliveries across the Philippines with care.
+                Tracked deliveries across the Philippines with J&T and LBC couriers.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Footer Row */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col sm:flex-row justify-between items-center gap-6">
-        <div className="space-y-1.5 text-center sm:text-left">
-            {/* Logo + Brand Name */}
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          {/* Brand Col */}
+          <div className="md:col-span-8 space-y-2 text-center sm:text-left">
             <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="relative w-8 h-8 rounded overflow-hidden">
+              <div className="relative w-8 h-8 rounded overflow-hidden">
                 <Image
-                src="/ckfs-logo.jpg"
-                alt="CK Football Shirts Logo"
-                fill
-                sizes="32px"
-                className="object-contain"
+                  src="/ckfs-logo.jpg"
+                  alt="CK Football Shirts Logo"
+                  fill
+                  sizes="32px"
+                  className="object-contain"
                 />
-            </div>
-            <span className="font-bold text-sm tracking-tight text-zinc-900">
+              </div>
+              <span className="font-bold text-sm tracking-tight text-zinc-900">
                 CK Football Shirts
-            </span>
+              </span>
             </Link>
-          <p className="text-xs text-zinc-500 font-mono">
-            Dedicated collector archive for authentic vintage and modern football shirts.
-          </p>
+            <p className="text-xs text-zinc-500 font-mono max-w-sm">
+              Dedicated collector archive for authentic vintage and modern football shirts.
+            </p>
+          </div>
+
+          {/* Customer Navigation Col */}
+          <div className="md:col-span-4 space-y-2 text-center sm:text-right">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-950 font-mono">
+              Quick Links
+            </p>
+            <ul className="space-y-2 text-xs text-zinc-600">
+              <li>
+                <Link href="/" className="hover:text-zinc-950 transition-colors">
+                  Browse Catalog
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/track-order"
+                  className="hover:text-zinc-950 font-semibold inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <Truck className="w-3.5 h-3.5" /> Track Shipment
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div className="text-xs text-zinc-400 font-mono text-center sm:text-right">
-          © {new Date().getFullYear()} CKFS Archive. All rights reserved.
+        {/* Copyright */}
+        <div className="mt-10 pt-6 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-400 font-mono">
+          <p>© {new Date().getFullYear()} CKFS Archive. All rights reserved.</p>
+          <Link href="/track-order" className="hover:text-zinc-700 transition-colors">
+            Waybill Tracking
+          </Link>
         </div>
       </div>
     </footer>

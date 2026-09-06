@@ -90,25 +90,42 @@ function CheckoutContent() {
   // State: Customer redirected back after payment authorization
   if (orderSuccessId) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4 max-w-md mx-auto">
-        <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-          <CheckCircle2 className="w-8 h-8" />
+      <div className="min-h-[70vh] flex items-center justify-center p-6">
+        <div className="bg-white border border-zinc-200 rounded-xl p-8 max-w-md w-full mx-auto text-center space-y-4 shadow-xs">
+          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+
+          <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950">
+            Payment Authorized!
+          </h1>
+
+          <p className="text-xs text-zinc-500">
+            Thank you for your purchase. Your order reference code is:
+          </p>
+
+          <p className="font-mono text-xs sm:text-sm font-bold bg-zinc-100 py-2 px-3 rounded-md text-zinc-900 inline-block border border-zinc-200">
+            #{orderSuccessId.slice(-6).toUpperCase()}{' '}
+            <span className="text-zinc-400 font-normal">({orderSuccessId})</span>
+          </p>
+
+          <p className="text-xs text-zinc-600 leading-relaxed">
+            Your kit is reserved and queued for dispatch preparation. Courier assignment and waybill information will appear on the tracking timeline once processed.
+          </p>
+
+          <div className="flex flex-col gap-2 pt-3">
+            <Link href={`/track-order?ref=${orderSuccessId}`}>
+              <Button className="w-full bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider h-11">
+                Track Your Package
+              </Button>
+            </Link>
+            <Link href="/">
+              <Button variant="outline" className="w-full text-xs font-semibold h-11 border-zinc-200">
+                Return to Catalog
+              </Button>
+            </Link>
+          </div>
         </div>
-        <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950">
-          Payment Authorized!
-        </h1>
-        <p className="text-xs font-mono text-zinc-500">
-          Order Reference:{' '}
-          <span className="font-bold text-zinc-900">{orderSuccessId}</span>
-        </p>
-        <p className="text-xs text-zinc-600 leading-relaxed">
-          Your payment has been successfully recorded in PayMongo Test Mode. Your kit is reserved and queued for dispatch preparation.
-        </p>
-        <Link href="/">
-          <Button className="mt-4 bg-zinc-950 hover:bg-zinc-800 text-xs font-bold uppercase tracking-wider h-11 px-6">
-            Return to Store
-          </Button>
-        </Link>
       </div>
     );
   }

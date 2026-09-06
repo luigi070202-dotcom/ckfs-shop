@@ -19,12 +19,17 @@ export interface IOrder extends Document {
   province: string;
   postalCode?: string;
   notes?: string;
-  paymentMethod: 'GCASH' | 'BANK_TRANSFER' | 'COD' | 'PAYMONGO'; // <-- Added 'PAYMONGO' here
+  paymentMethod: 'GCASH' | 'BANK_TRANSFER' | 'COD' | 'PAYMONGO';
   items: IOrderItem[];
   subtotal: number;
   shippingFee: number;
   total: number;
   status: 'PENDING' | 'PAID' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
+  // Logistics & Tracking additions
+  courier?: string;
+  trackingNumber?: string;
+  dispatchedAt?: Date;
+  checkoutSessionId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,6 +69,24 @@ const OrderSchema = new Schema<IOrder>(
       type: String,
       enum: ['PENDING', 'PAID', 'DISPATCHED', 'DELIVERED', 'CANCELLED'],
       default: 'PENDING',
+    },
+    // Logistics & Tracking additions
+    courier: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    trackingNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    dispatchedAt: {
+      type: Date,
+    },
+    checkoutSessionId: {
+      type: String,
+      trim: true,
     },
   },
   { timestamps: true }
