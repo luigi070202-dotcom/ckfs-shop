@@ -28,6 +28,16 @@ const STAGES = [
 
 const ITEMS_PER_PAGE = 3;
 
+// Helper to mask customer name for privacy (e.g. "Juan Dela Cruz" -> "J*** C.")
+const maskName = (name?: string) => {
+  if (!name) return 'Customer';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return `${parts[0][0]}***`;
+  }
+  return `${parts[0][0]}*** ${parts[parts.length - 1][0]}.`;
+};
+
 function TrackOrderContent() {
   const searchParams = useSearchParams();
   const initialRef = searchParams.get('ref') || '';
@@ -59,7 +69,7 @@ function TrackOrderContent() {
         throw new Error(json.error || 'No orders found matching that Reference ID or Email address.');
       }
 
-      setMatchedOrders(json.data);
+      setMatchedOrders(json.data || []);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error looking up tracking details.');
     } finally {
@@ -67,7 +77,6 @@ function TrackOrderContent() {
     }
   };
 
-  // Auto-search if reference ID is in the query params
   useEffect(() => {
     if (initialRef) {
       executeSearch(initialRef);
@@ -148,6 +157,10 @@ function TrackOrderContent() {
           <div className="space-y-6">
             {paginatedOrders.map((order) => {
               const currentStageIndex = getStageIndex(order.status);
+              
+              const cityAndProvince = [order.city, order.province]
+                .filter(Boolean)
+                .join(', ');
 
               return (
                 <Card key={order._id} className="bg-white border-zinc-200 shadow-xs overflow-hidden">
@@ -242,9 +255,11 @@ function TrackOrderContent() {
                     </div>
 
                     <div className="text-xs space-y-1 text-zinc-600 border-t border-zinc-100 pt-3">
-                      <p className="font-bold text-zinc-900 uppercase text-[10px] font-mono">Shipping Details</p>
-                      <p className="font-medium text-zinc-900">{order.customerName}</p>
-                      <p>{order.shippingAddress}, {order.city}, {order.province} {order.postalCode}</p>
+                      <p className="font-bold text-zinc-900 uppercase text-[10px] font-mono">Delivery Area</p>
+                      {order.customerName && (
+                        <p className="font-medium text-zinc-900">{maskName(order.customerName)}</p>
+                      )}
+                      <p className="text-zinc-600">{cityAndProvince || 'Destination on file'}</p>
                     </div>
                   </CardContent>
                 </Card>

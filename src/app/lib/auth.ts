@@ -26,7 +26,11 @@ export async function verifyAdminSession(token: string) {
 // Helper to authenticate incoming requests inside Route Handlers & Server Components
 export async function getAdminSession() {
   const cookieStore = await cookies();
-  const token = cookieStore.get('admin_session')?.value;
+  
+  // Read ckfs_admin_token (matching /api/admin/login and middleware.ts)
+  const token =
+    cookieStore.get('ckfs_admin_token')?.value ||
+    cookieStore.get('admin_session')?.value;
 
   if (!token) {
     return null;

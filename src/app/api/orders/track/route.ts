@@ -24,12 +24,10 @@ export async function POST(req: Request) {
       { email: cleanQuery.toLowerCase() },
     ];
 
-    // If it's a full 24-character Mongo hex ID
     if (mongoose.Types.ObjectId.isValid(cleanQuery) && cleanQuery.length === 24) {
       searchConditions.push({ _id: cleanQuery });
     }
 
-    // If it's a 6-character short reference
     if (cleanQuery.length === 6 && /^[a-fA-F0-9]{6}$/.test(cleanQuery)) {
       searchConditions.push({
         $expr: {
