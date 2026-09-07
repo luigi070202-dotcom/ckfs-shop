@@ -1,6 +1,6 @@
 // src/app/api/admin/metrics/route.ts
 import { NextResponse } from 'next/server';
-import { connectDB } from '../../lib/db'; // adjust path to your lib/db if needed
+import { connectDB } from '../../lib/db'; // adjust path to your lib/db if needed[cite: 1]
 import { Product } from '@/app/models/Products';
 import { Order } from '@/app/models/Order';
 import { getAdminSession } from '@/app/lib/auth';
@@ -27,6 +27,8 @@ export async function GET() {
       .filter((o: any) => ['PAID', 'DISPATCHED', 'DELIVERED'].includes(o.status))
       .reduce((sum: number, o: any) => sum + (o.total || 0), 0);
 
+    // Filter order counts by status
+    const paidOrdersCount = orders.filter((o: any) => o.status === 'PAID').length;
     const pendingOrdersCount = orders.filter((o: any) => o.status === 'PENDING').length;
     const dispatchedOrdersCount = orders.filter((o: any) => o.status === 'DISPATCHED').length;
 
@@ -61,6 +63,7 @@ export async function GET() {
       data: {
         totalRevenue,
         ordersCount: orders.length,
+        paidOrdersCount,
         pendingOrdersCount,
         dispatchedOrdersCount,
         totalKitsCount,

@@ -10,7 +10,7 @@ import {
   AlertTriangle, 
   ArrowUpRight, 
   Package, 
-  Clock,
+  CheckCircle2,
   RefreshCw,
   Plus
 } from 'lucide-react';
@@ -24,7 +24,6 @@ export default function AdminOverviewPage() {
   const fetchMetrics = async () => {
     setLoading(true);
     try {
-      // Try /api/admin/metrics first; fall back to /admin/metrics if folder is placed directly inside admin
       let res = await fetch('/api/admin/metrics');
       if (!res.ok) {
         res = await fetch('/admin/metrics');
@@ -102,21 +101,23 @@ export default function AdminOverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Awaiting Dispatch */}
+        {/* Paid & Awaiting Dispatch */}
         <Card className="bg-white border-zinc-200 shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-[11px] font-mono uppercase text-zinc-500">
-              Awaiting Dispatch
+              Paid & Awaiting Dispatch
             </CardTitle>
-            <div className="w-8 h-8 rounded-md bg-amber-50 text-amber-700 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-zinc-950 font-mono">
-              {metrics?.pendingOrdersCount || 0}
+              {metrics?.paidOrdersCount || 0}
             </div>
-            <p className="text-[11px] text-zinc-500 mt-1">Pending waybill assignments</p>
+            <p className="text-[11px] text-zinc-500 mt-1">
+              {(metrics?.paidOrdersCount || 0) === 1 ? '1 kit ready for waybill' : 'Kits ready for waybill'}
+            </p>
           </CardContent>
         </Card>
 
@@ -259,7 +260,7 @@ export default function AdminOverviewPage() {
                             : order.status === 'DISPATCHED'
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
                             : order.status === 'PAID'
-                            ? 'bg-zinc-100 text-zinc-800 border-zinc-200'
+                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-black'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
                         }`}
                       >

@@ -31,6 +31,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-950 font-sans">
+        <div className="w-full bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-center py-1.5 px-4 text-xs font-mono">
+          Portfolio Showcase: Payments use PayMongo Test Mode (Use GCash mock OTP: 123456)
+        </div>
         <Header />
         <div className="flex-1">{children}</div>
         <Footer />

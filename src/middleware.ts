@@ -30,7 +30,7 @@ function isRateLimited(ip: string, limit = 5, windowMs = 60 * 1000): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Explicit bypass for external webhooks (always unauthenticated & unthrottled)
+  // Explicit bypass for external webhooks (always unauthenticated & unthrottled)[cite: 1]
   if (pathname.startsWith('/api/webhooks')) {
     return NextResponse.next();
   }
@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   const forwardedFor = request.headers.get('x-forwarded-for');
   const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
 
-  // 1. Rate Limit sensitive POST endpoints (Brute-force & spam mitigation)
+  // 1. Rate Limit sensitive POST endpoints (Brute-force & spam mitigation)[cite: 1]
   if (
     request.method === 'POST' &&
     (pathname === '/api/admin/login' || pathname === '/api/checkout/paymongo')
@@ -54,15 +54,27 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Comprehensive Admin Protection (Pages & APIs)
+  const token =
+    request.cookies.get('ckfs_admin_token')?.value ||
+    request.cookies.get('admin_session')?.value;
+
+  // 2. Redirect logged-in admin away from /admin/login directly to metrics (/admin)
+  if (pathname === '/admin/login' && token) {
+    try {
+      const { payload } = await jwtVerify(token, SECRET_KEY);
+      if (payload.role === 'admin') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      }
+    } catch {
+      // Invalid/expired token: continue to login page
+    }
+  }
+
+  // 3. Comprehensive Admin Protection (Pages & APIs)[cite: 1]
   const isAdminPage = pathname.startsWith('/admin') && pathname !== '/admin/login';
   const isAdminApi = pathname.startsWith('/api/admin') && pathname !== '/api/admin/login';
 
   if (isAdminPage || isAdminApi) {
-    const token =
-      request.cookies.get('ckfs_admin_token')?.value ||
-      request.cookies.get('admin_session')?.value;
-
     const rejectUnauthorized = () => {
       if (isAdminApi) {
         return NextResponse.json(

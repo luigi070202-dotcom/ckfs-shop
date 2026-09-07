@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle, KeyRound } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -15,6 +15,12 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const fillDemoCredentials = () => {
+    setEmail('demo@ckfs.com');
+    setPassword('demo12345');
+    setErrorMsg('');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +40,8 @@ export default function AdminLoginPage() {
         throw new Error(data.error || 'Invalid credentials');
       }
 
-      router.push('/admin/inventory');
+      // Redirect directly to the Metrics Overview Hub
+      router.push('/admin');
       router.refresh();
     } catch (err: any) {
       setErrorMsg(err.message || 'Authentication error');
@@ -64,6 +71,31 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
+        {/* Portfolio Reviewer Access Helper */}
+        <div className="p-3.5 bg-zinc-950/80 border border-zinc-800 rounded-xl space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300">
+              <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+              <span>Portfolio Reviewer Access</span>
+            </div>
+            <button
+              type="button"
+              onClick={fillDemoCredentials}
+              className="text-[11px] font-mono text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors cursor-pointer"
+            >
+              Autofill
+            </button>
+          </div>
+          <div className="text-[11px] font-mono text-zinc-400 space-y-0.5 border-t border-zinc-800/60 pt-2">
+            <p>
+              Email: <span className="text-zinc-200">demo@ckfs.com</span>
+            </p>
+            <p>
+              Pass: <span className="text-zinc-200">demo12345</span>
+            </p>
+          </div>
+        </div>
+
         {errorMsg && (
           <div className="p-3 bg-rose-950/50 border border-rose-800/60 rounded-lg text-rose-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -77,7 +109,7 @@ export default function AdminLoginPage() {
             <Input
               type="email"
               required
-              placeholder="owner@ckfs.com"
+              placeholder="demo@ckfs.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-zinc-950 border-zinc-800 text-xs text-white placeholder:text-zinc-600 focus-visible:ring-zinc-700"
@@ -99,7 +131,7 @@ export default function AdminLoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-bold uppercase tracking-wider h-10 mt-2"
+            className="w-full bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-bold uppercase tracking-wider h-10 mt-2 cursor-pointer"
           >
             <Lock className="w-3.5 h-3.5 mr-1.5" />
             {loading ? 'Authenticating...' : 'Sign In to Dashboard'}

@@ -1,7 +1,7 @@
 // src/app/checkout/page.tsx
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -17,7 +17,19 @@ import {
   CheckCircle2,
   AlertCircle,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
+
+const DEMO_CHECKOUT_DATA = {
+  customerName: 'Juan Dela Cruz',
+  email: 'juan.reviewer@example.com',
+  phone: '09171234567',
+  shippingAddress: 'Unit 4B, Emerald Tower, F. Estrella St.',
+  city: 'Malolos',
+  province: 'Bulacan',
+  postalCode: '3000',
+  notes: 'Portfolio review order. Please handle with care!',
+};
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
@@ -28,6 +40,7 @@ function CheckoutContent() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isConfirmed, setIsConfirmed] = useState(false);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -40,6 +53,24 @@ function CheckoutContent() {
     notes: '',
   });
 
+  // Auto-sync status from PENDING to PAID when PayMongo redirects back with ?success=...
+  useEffect(() => {
+    if (!orderSuccessId) return;
+
+    fetch('/api/checkout/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: orderSuccessId }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setIsConfirmed(true);
+        }
+      })
+      .catch((err) => console.error('Failed to auto-confirm order:', err));
+  }, [orderSuccessId]);
+
   const subtotal = getCartTotal();
   const shippingFee = subtotal > 0 ? 150 : 0;
   const total = subtotal + shippingFee;
@@ -48,6 +79,11 @@ function CheckoutContent() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleFillDemo = () => {
+    setFormData(DEMO_CHECKOUT_DATA);
+    setErrorMsg('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,10 +112,7 @@ function CheckoutContent() {
         throw new Error(data.error || 'Failed to initiate payment.');
       }
 
-      // Empty cart before leaving for PayMongo checkout
       clearCart();
-
-      // Redirect directly to PayMongo hosted payment portal
       window.location.href = data.checkoutUrl;
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred during checkout.');
@@ -87,7 +120,7 @@ function CheckoutContent() {
     }
   };
 
-  // State: Customer redirected back after payment authorization
+  // State: Payment completed & returning from PayMongo
   if (orderSuccessId) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-6">
@@ -96,9 +129,14 @@ function CheckoutContent() {
             <CheckCircle2 className="w-8 h-8" />
           </div>
 
-          <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950">
-            Payment Authorized!
-          </h1>
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950">
+              Payment Confirmed!
+            </h1>
+            <span className="inline-block mt-1 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {isConfirmed ? 'Database Status: PAID' : 'Processing Payment...'}
+            </span>
+          </div>
 
           <p className="text-xs text-zinc-500">
             Thank you for your purchase. Your order reference code is:
@@ -110,17 +148,17 @@ function CheckoutContent() {
           </p>
 
           <p className="text-xs text-zinc-600 leading-relaxed">
-            Your kit is reserved and queued for dispatch preparation. Courier assignment and waybill information will appear on the tracking timeline once processed.
+            Your kit has been secured and moved into the dispatch fulfillment queue. Courier waybill tracking details will update once packaged.
           </p>
 
           <div className="flex flex-col gap-2 pt-3">
             <Link href={`/track-order?ref=${orderSuccessId}`}>
-              <Button className="w-full bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider h-11">
+              <Button className="w-full bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider h-11 cursor-pointer">
                 Track Your Package
               </Button>
             </Link>
             <Link href="/">
-              <Button variant="outline" className="w-full text-xs font-semibold h-11 border-zinc-200">
+              <Button variant="outline" className="w-full text-xs font-semibold h-11 border-zinc-200 cursor-pointer">
                 Return to Catalog
               </Button>
             </Link>
@@ -130,7 +168,7 @@ function CheckoutContent() {
     );
   }
 
-  // State: Payment cancelled or abandoned at PayMongo
+  // State: Payment cancelled or abandoned
   if (orderCancelledId) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4 max-w-md mx-auto">
@@ -144,7 +182,7 @@ function CheckoutContent() {
           The payment session was cancelled. You can review your items and try checking out again.
         </p>
         <Link href="/checkout">
-          <Button className="mt-4 bg-zinc-950 hover:bg-zinc-800 text-xs font-bold uppercase tracking-wider h-11 px-6">
+          <Button className="mt-4 bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider h-11 px-6 cursor-pointer">
             Try Checkout Again
           </Button>
         </Link>
@@ -152,7 +190,7 @@ function CheckoutContent() {
     );
   }
 
-  // State: Cart is empty
+  // State: Empty Bag
   if (items.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
@@ -162,7 +200,7 @@ function CheckoutContent() {
           Add shirts from the archive before checking out.
         </p>
         <Link href="/">
-          <Button variant="outline" size="sm" className="text-xs">
+          <Button variant="outline" size="sm" className="text-xs cursor-pointer">
             <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Return to Catalog
           </Button>
         </Link>
@@ -193,13 +231,22 @@ function CheckoutContent() {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Shipping & Payment Info */}
           <div className="lg:col-span-7 space-y-6">
             {/* Customer Contact */}
             <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-2xs space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-950 border-b border-zinc-100 pb-3">
-                1. Customer Details
-              </h2>
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-950">
+                  1. Customer Details
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleFillDemo}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" /> Fill Demo Info
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1 sm:col-span-2">
                   <Label className="text-xs">Full Name</Label>
@@ -260,7 +307,7 @@ function CheckoutContent() {
                   <Input
                     required
                     name="city"
-                    placeholder="e.g. Quezon City"
+                    placeholder="e.g. Malolos"
                     value={formData.city}
                     onChange={handleChange}
                     className="text-xs"
@@ -271,10 +318,21 @@ function CheckoutContent() {
                   <Input
                     required
                     name="province"
-                    placeholder="e.g. Metro Manila"
+                    placeholder="e.g. Bulacan"
                     value={formData.province}
                     onChange={handleChange}
                     className="text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Postal Code</Label>
+                  <Input
+                    required
+                    name="postalCode"
+                    placeholder="3000"
+                    value={formData.postalCode}
+                    onChange={handleChange}
+                    className="text-xs font-mono"
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
@@ -367,7 +425,7 @@ function CheckoutContent() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs uppercase tracking-wider"
+                className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs uppercase tracking-wider cursor-pointer"
               >
                 {loading
                   ? 'Connecting to PayMongo...'
