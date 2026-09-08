@@ -46,7 +46,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <div className="relative w-9 h-9 sm:w-10 sm:h-10 overflow-hidden rounded">
             <Image
-              src="/ckfs-logo.jpg"
+              src="/logo.jpg"
               alt="CK Football Shirts Logo"
               fill
               priority

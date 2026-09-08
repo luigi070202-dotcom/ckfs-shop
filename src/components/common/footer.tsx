@@ -71,7 +71,7 @@ export function Footer() {
             <Link href="/" className="inline-flex items-center gap-2.5">
               <div className="relative w-8 h-8 rounded overflow-hidden">
                 <Image
-                  src="/ckfs-logo.jpg"
+                  src="/logo.jpg"
                   alt="CK Football Shirts Logo"
                   fill
                   sizes="32px"
