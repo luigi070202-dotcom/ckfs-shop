@@ -53,9 +53,11 @@ function CheckoutContent() {
     notes: '',
   });
 
-  // Auto-sync status from PENDING to PAID when PayMongo redirects back with ?success=...
+  // Auto-sync status to PAID and clear cart only AFTER returning from PayMongo
   useEffect(() => {
     if (!orderSuccessId) return;
+
+    clearCart();
 
     fetch('/api/checkout/confirm', {
       method: 'POST',
@@ -69,7 +71,7 @@ function CheckoutContent() {
         }
       })
       .catch((err) => console.error('Failed to auto-confirm order:', err));
-  }, [orderSuccessId]);
+  }, [orderSuccessId, clearCart]);
 
   const subtotal = getCartTotal();
   const shippingFee = subtotal > 0 ? 150 : 0;
@@ -112,8 +114,8 @@ function CheckoutContent() {
         throw new Error(data.error || 'Failed to initiate payment.');
       }
 
-      clearCart();
-      window.location.href = data.checkoutUrl;
+      // Do NOT clear cart here. Redirect directly to prevent the "bag is empty" flicker.
+      window.location.assign(data.checkoutUrl);
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred during checkout.');
       setLoading(false);

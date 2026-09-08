@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       items,
     } = body;
 
-    // 1. Validate required customer fields
+    // 1. Validate customer details and bag contents
     if (!customerName || !email || !phone || !shippingAddress || !city || !province) {
       return NextResponse.json(
         { success: false, error: 'Please provide all required shipping details.' },
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Validate products, recalculate prices server-side, and deduct stock
+    // 2. Validate items, re-compute prices from DB, and atomically decrement inventory
     let serverSubtotal = 0;
     const validatedItems: any[] = [];
     const updatedProducts: { productId: string; size: string; quantity: number }[] = [];
@@ -46,7 +46,6 @@ export async function POST(req: Request) {
     for (const item of items) {
       const quantity = Math.max(1, Number(item.quantity) || 1);
 
-      // Verify product existence in DB
       const product = await Product.findById(item.productId || item.id);
       if (!product) {
         return NextResponse.json(
@@ -55,7 +54,6 @@ export async function POST(req: Request) {
         );
       }
 
-      // Verify variant availability
       const variant = product.variants?.find((v: any) => v.size === item.size);
       if (!variant) {
         return NextResponse.json(
@@ -78,7 +76,7 @@ export async function POST(req: Request) {
       );
 
       if (!updated) {
-        // Rollback any earlier deductions in this batch
+        // Roll back any successful deductions in this request batch
         for (const rollback of updatedProducts) {
           await Product.updateOne(
             { _id: rollback.productId, 'variants.size': rollback.size } as any,
@@ -101,7 +99,6 @@ export async function POST(req: Request) {
         quantity,
       });
 
-      // Price derived strictly from database record
       const actualUnitPrice = Number(product.price) || 0;
       serverSubtotal += actualUnitPrice * quantity;
 
@@ -115,11 +112,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3. Server-computed shipping fee and total
+    // 3. Flat shipping rate calculation
     const serverShippingFee = serverSubtotal > 0 ? 150 : 0;
     const serverTotal = serverSubtotal + serverShippingFee;
 
-    // 4. Save pending order with tamper-proof server values
+    // 4. Create pending order document
     const order = await Order.create({
       customerName,
       email: email.toLowerCase().trim(),
@@ -137,7 +134,7 @@ export async function POST(req: Request) {
       status: 'PENDING',
     });
 
-    // 5. Format verified line items for PayMongo (PHP to centavos)
+    // 5. Build PayMongo line items in centavos
     const lineItems = validatedItems.map((item: any) => ({
       name: `${item.title} (${item.size})`,
       amount: Math.round(item.price * 100),
@@ -156,11 +153,16 @@ export async function POST(req: Request) {
       });
     }
 
+    // 6. Dynamic domain extraction from incoming request headers
+    const reqHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const reqProto = req.headers.get('x-forwarded-proto') || 'https';
+    const reqOrigin = req.headers.get('origin');
+
     const appUrl =
-  process.env.NEXT_BASE_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  'https://ckfs-shop.vercel.app';
+      reqOrigin ||
+      (reqHost ? `${reqProto}://${reqHost}` : null) ||
+      process.env.NEXT_BASE_URL ||
+      'https://ckfs-shop.vercel.app';
 
     const secretKey = process.env.PAYMONGO_SECRET_KEY;
     if (!secretKey) {
@@ -168,7 +170,7 @@ export async function POST(req: Request) {
     }
     const authHeader = Buffer.from(`${secretKey}:`).toString('base64');
 
-    // 6. Create PayMongo Checkout Session
+    // 7. Request PayMongo checkout session
     const paymongoRes = await fetch('https://api.paymongo.com/v1/checkout_sessions', {
       method: 'POST',
       headers: {
@@ -196,7 +198,7 @@ export async function POST(req: Request) {
     const sessionData = await paymongoRes.json();
 
     if (!paymongoRes.ok || !sessionData.data) {
-      // Rollback deducted stock if PayMongo API fails
+      // Revert stock deductions if session creation fails
       for (const rollback of updatedProducts) {
         await Product.updateOne(
           { _id: rollback.productId, 'variants.size': rollback.size } as any,
