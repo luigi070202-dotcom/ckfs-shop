@@ -156,7 +156,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_BASE_URL || 'http://localhost:3000';
 
     const secretKey = process.env.PAYMONGO_SECRET_KEY;
     if (!secretKey) {
